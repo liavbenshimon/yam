@@ -290,6 +290,8 @@ export default function InspectionForm({
       format: "a4",
     });
 
+    doc.addImage("/yamlogo.jpg", "PNG", 10, 10, 50, 50);
+
     // doc.addFont("NotoSansHebrew.ttf", "NotoSansHebrew", "normal");
     doc.addFont("NotoSansHebrew.ttf", "NotoSansHebrew", "normal");
     doc.setFont("NotoSansHebrew");
@@ -312,7 +314,7 @@ export default function InspectionForm({
     doc.text(`שם המנהל: ${formData.inspector}`, 190, 40, { align: "right" });
     doc.text(`תאריך: ${formData.date}`, 190, 48, { align: "right" });
     doc.text(`כתובת הבניין: ${formData.address}`, 190, 56, { align: "right" });
-    doc.text(`זמן שליחת הטופס: ${formData.submissionTime}`, 190, 64, {
+    doc.text(`זמן שליחת הטופס: ${submissionTime}`, 190, 64, {
       align: "right",
     });
 
@@ -349,7 +351,10 @@ export default function InspectionForm({
       yPosition += 15;
     }
 
-    // Systems Inspection section title
+    // Add new page for systems inspection
+    doc.addPage();
+    yPosition = 20; // Reset y position for new page
+
     doc.setFontSize(16);
     doc.text("בדיקת מערכות", 190, yPosition, { align: "right" });
     yPosition += 10;
