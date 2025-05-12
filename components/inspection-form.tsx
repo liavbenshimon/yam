@@ -24,6 +24,7 @@ import { getManagerById } from "@/lib/managers-data";
 import { useAuth } from "@/lib/auth";
 import { jsPDF } from "jspdf";
 import "../fonts/NotoSansHebrew";
+import { twMerge } from "tailwind-merge";
 
 interface CheckItem {
   id: string;
@@ -481,245 +482,274 @@ export default function InspectionForm({
       </div>
 
       <form onSubmit={handleSubmit} className="p-4 md:p-6">
-        {/* פרטי המנהל והבניין */}
-        <div className="mb-8 overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-[#024CAA] text-white">
-                <th className="border border-[#DBD3D3] p-2 text-right">
-                  פרטי המנהל
-                </th>
-                <th className="border border-[#DBD3D3] p-2 text-right">
-                  פרטי הבניין ותאריך
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="border border-[#DBD3D3] p-4">
-                  <div className="mb-2">
-                    <Label htmlFor="manager" className="block mb-1">
-                      שם המנהל:
-                    </Label>
-                    <div className="p-2 bg-gray-50 rounded border border-gray-200">
-                      {managerName}
-                    </div>
-                  </div>
-                </td>
-                <td className="border border-[#DBD3D3] p-4">
-                  <div className="mb-2">
-                    <Label htmlFor="client" className="block mb-1">
-                      שם הלקוח:
-                    </Label>
-                    <Select
-                      value={selectedClient}
-                      onValueChange={setSelectedClient}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="בחר לקוח" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableClients.map((client) => (
-                          <SelectItem key={client} value={client}>
-                            {client}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="date" className="block mb-1">
-                      תאריך:
-                    </Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      className="w-full"
-                      required
-                    />
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        {/* פרטי המנהל והבניין - Flexbox Layout */}
+        <div className="mb-8 flex flex-col md:flex-row gap-4">
+          {/* Manager Details */}
+          <div className="flex-1 border border-[#DBD3D3] rounded-md p-4">
+            <div className="bg-[#024CAA] text-white p-2 rounded-t-md -m-4 mb-4">
+              <h3 className="font-bold text-right">פרטי המנהל</h3>
+            </div>
+            <div className="mb-2">
+              <Label htmlFor="manager" className="block mb-1 text-right">
+                שם המנהל:
+              </Label>
+              <div className="p-2 bg-gray-50 rounded border border-gray-200 text-right">
+                {managerName}
+              </div>
+            </div>
+          </div>
+
+          {/* Building and Date Details */}
+          <div className="flex-1 border border-[#DBD3D3] rounded-md p-4">
+            <div className="bg-[#024CAA] text-white p-2 rounded-t-md -m-4 mb-4">
+              <h3 className="font-bold text-right">פרטי הבניין ותאריך</h3>
+            </div>
+            <div className="mb-2">
+              <Label htmlFor="client" className="block mb-1 text-right">
+                שם הלקוח:
+              </Label>
+              <Select
+                value={selectedClient}
+                onValueChange={setSelectedClient}
+                dir="rtl" // Ensure dropdown opens correctly in RTL
+              >
+                <SelectTrigger className="w-full text-right">
+                  <SelectValue placeholder="בחר לקוח" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableClients.map((client) => (
+                    <SelectItem key={client} value={client}>
+                      {client}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="date" className="block mb-1 text-right">
+                תאריך:
+              </Label>
+              <Input
+                id="date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full text-right"
+                required
+                dir="rtl" // Hint for date picker alignment if needed
+              />
+            </div>
+          </div>
         </div>
 
-        {/* General Inspection Table */}
-        <div className="mb-8 overflow-x-auto">
+        {/* General Inspection Section - Flexbox Layout */}
+        <div className="mb-8">
           <h2 className="text-xl font-bold mb-4 text-[#091057]">בדיקה כללית</h2>
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-[#024CAA] text-white">
-                <th className="border border-[#DBD3D3] p-2 text-right">נושא</th>
-                <th className="border border-[#DBD3D3] p-2 w-20 text-center">
-                  תקין
-                </th>
-                <th className="border border-[#DBD3D3] p-2 w-20 text-center">
-                  לא תקין
-                </th>
-                <th className="border border-[#DBD3D3] p-2 text-right">
-                  הערות
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {generalItems.map((item, index) => (
-                <tr
-                  key={item.id}
-                  className={index % 2 === 0 ? "bg-gray-50" : ""}
-                >
-                  <td className="border border-[#DBD3D3] p-2">{item.topic}</td>
-                  <td className="border border-[#DBD3D3] p-2 text-center">
-                    <Checkbox
-                      id={`${item.id}-ok`}
-                      checked={item.isOk === true}
-                      onCheckedChange={(checked) =>
-                        handleGeneralItemChange(index, "isOk", checked)
-                      }
-                    />
-                  </td>
-                  <td className="border border-[#DBD3D3] p-2 text-center">
-                    <Checkbox
-                      id={`${item.id}-notok`}
-                      checked={item.isNotOk === true}
-                      onCheckedChange={(checked) =>
-                        handleGeneralItemChange(index, "isNotOk", checked)
-                      }
-                    />
-                  </td>
-                  <td className="border border-[#DBD3D3] p-2">
-                    <Textarea
-                      id={`${item.id}-comments`}
-                      value={item.comments}
-                      onChange={(e) =>
-                        handleGeneralItemChange(
-                          index,
-                          "comments",
-                          e.target.value
-                        )
-                      }
-                      className="w-full min-h-[40px]"
-                    />
-                  </td>
-                </tr>
-              ))}
-              {/* שורה להערות מנהל אחזקה */}
-              <tr className="bg-gray-100">
-                <td colSpan={4} className="border border-[#DBD3D3] p-2">
+          {/* Header Row (visible on larger screens) */}
+          <div className="hidden md:flex bg-[#024CAA] text-white p-2 rounded-t-md">
+            <div className="flex-1 px-2 text-right font-bold">נושא</div>
+            <div className="w-20 px-2 text-center font-bold">תקין</div>
+            <div className="w-20 px-2 text-center font-bold">לא תקין</div>
+            <div className="flex-1 px-2 text-right font-bold">הערות</div>
+          </div>
+
+          {/* Data Rows */}
+          <div className="border border-[#DBD3D3] rounded-b-md md:border-t-0 md:rounded-t-none">
+            {generalItems.map((item, index) => (
+              <div
+                key={item.id}
+                className={twMerge(
+                  "flex flex-col md:flex-row border-b border-[#DBD3D3] last:border-b-0 p-2",
+                  index % 2 === 0 ? "bg-gray-50" : ""
+                )}
+              >
+                {/* Topic (Full width on mobile, flexible on larger screens) */}
+                <div className="flex-1 mb-2 md:mb-0 md:px-2 text-right">
+                  <Label className="md:hidden font-bold">נושא: </Label>
+                  {item.topic}
+                </div>
+
+                {/* Checkboxes (Side-by-side on mobile) */}
+                <div className="flex justify-start md:justify-center items-center mb-2 md:mb-0 md:w-20 md:px-2">
                   <Label
-                    htmlFor="manager-general-notes"
-                    className="block mb-1 font-bold"
+                    htmlFor={`${item.id}-ok`}
+                    className="md:hidden mr-2 font-bold"
                   >
-                    הערות מנהל אחזקה:
+                    תקין:
+                  </Label>
+                  <Checkbox
+                    id={`${item.id}-ok`}
+                    checked={item.isOk === true}
+                    onCheckedChange={(checked) =>
+                      handleGeneralItemChange(index, "isOk", checked)
+                    }
+                    className="mr-4 md:mr-0"
+                  />
+                </div>
+                <div className="flex justify-start md:justify-center items-center mb-2 md:mb-0 md:w-20 md:px-2">
+                  <Label
+                    htmlFor={`${item.id}-notok`}
+                    className="md:hidden mr-2 font-bold"
+                  >
+                    לא תקין:
+                  </Label>
+                  <Checkbox
+                    id={`${item.id}-notok`}
+                    checked={item.isNotOk === true}
+                    onCheckedChange={(checked) =>
+                      handleGeneralItemChange(index, "isNotOk", checked)
+                    }
+                  />
+                </div>
+
+                {/* Comments */}
+                <div className="flex-1 md:px-2">
+                  <Label
+                    htmlFor={`${item.id}-comments`}
+                    className="md:hidden font-bold"
+                  >
+                    הערות:
                   </Label>
                   <Textarea
-                    id="manager-general-notes"
-                    value={managerNotes.general}
+                    id={`${item.id}-comments`}
+                    value={item.comments}
                     onChange={(e) =>
-                      setManagerNotes({
-                        ...managerNotes,
-                        general: e.target.value,
-                      })
+                      handleGeneralItemChange(index, "comments", e.target.value)
                     }
-                    className="w-full min-h-[80px]"
-                    placeholder="הערות נוספות של מנהל האחזקה..."
+                    className="w-full min-h-[40px] text-right"
                   />
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </div>
+              </div>
+            ))}
+
+            {/* Manager General Notes */}
+            <div className="bg-gray-100 p-4 rounded-b-md">
+              <Label
+                htmlFor="manager-general-notes"
+                className="block mb-1 font-bold text-right"
+              >
+                הערות מנהל אחזקה:
+              </Label>
+              <Textarea
+                id="manager-general-notes"
+                value={managerNotes.general}
+                onChange={(e) =>
+                  setManagerNotes({
+                    ...managerNotes,
+                    general: e.target.value,
+                  })
+                }
+                className="w-full min-h-[80px] text-right"
+                placeholder="הערות נוספות של מנהל האחזקה..."
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Systems Inspection Table */}
-        <div className="mb-8 overflow-x-auto">
+        {/* Systems Inspection Section - Flexbox Layout */}
+        <div className="mb-8">
           <h2 className="text-xl font-bold mb-4 text-[#091057]">
             בדיקת מערכות
           </h2>
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-[#024CAA] text-white">
-                <th className="border border-[#DBD3D3] p-2 text-right">
-                  מערכת לבדיקה
-                </th>
-                <th className="border border-[#DBD3D3] p-2 w-20 text-center">
-                  תקין
-                </th>
-                <th className="border border-[#DBD3D3] p-2 w-20 text-center">
-                  לא תקין
-                </th>
-                <th className="border border-[#DBD3D3] p-2 text-right">
-                  הערות
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {systemItems.map((item, index) => (
-                <tr
-                  key={item.id}
-                  className={index % 2 === 0 ? "bg-gray-50" : ""}
-                >
-                  <td className="border border-[#DBD3D3] p-2">{item.topic}</td>
-                  <td className="border border-[#DBD3D3] p-2 text-center">
-                    <Checkbox
-                      id={`${item.id}-ok`}
-                      checked={item.isOk === true}
-                      onCheckedChange={(checked) =>
-                        handleSystemItemChange(index, "isOk", checked)
-                      }
-                    />
-                  </td>
-                  <td className="border border-[#DBD3D3] p-2 text-center">
-                    <Checkbox
-                      id={`${item.id}-notok`}
-                      checked={item.isNotOk === true}
-                      onCheckedChange={(checked) =>
-                        handleSystemItemChange(index, "isNotOk", checked)
-                      }
-                    />
-                  </td>
-                  <td className="border border-[#DBD3D3] p-2">
-                    <Textarea
-                      id={`${item.id}-comments`}
-                      value={item.comments}
-                      onChange={(e) =>
-                        handleSystemItemChange(
-                          index,
-                          "comments",
-                          e.target.value
-                        )
-                      }
-                      className="w-full min-h-[40px]"
-                    />
-                  </td>
-                </tr>
-              ))}
-              {/* שורה להערות מנהל אחזקה */}
-              <tr className="bg-gray-100">
-                <td colSpan={4} className="border border-[#DBD3D3] p-2">
+          {/* Header Row (visible on larger screens) */}
+          <div className="hidden md:flex bg-[#024CAA] text-white p-2 rounded-t-md">
+            <div className="flex-1 px-2 text-right font-bold">מערכת לבדיקה</div>
+            <div className="w-20 px-2 text-center font-bold">תקין</div>
+            <div className="w-20 px-2 text-center font-bold">לא תקין</div>
+            <div className="flex-1 px-2 text-right font-bold">הערות</div>
+          </div>
+
+          {/* Data Rows */}
+          <div className="border border-[#DBD3D3] rounded-b-md md:border-t-0 md:rounded-t-none">
+            {systemItems.map((item, index) => (
+              <div
+                key={item.id}
+                className={twMerge(
+                  "flex flex-col md:flex-row border-b border-[#DBD3D3] last:border-b-0 p-2",
+                  index % 2 === 0 && "bg-gray-50"
+                )}
+              >
+                {/* Topic */}
+                <div className="flex-1 mb-2 md:mb-0 md:px-2 text-right">
+                  <Label className="md:hidden font-bold">מערכת: </Label>
+                  {item.topic}
+                </div>
+
+                {/* Checkboxes */}
+                <div className="flex justify-start md:justify-center items-center mb-2 md:mb-0 md:w-20 md:px-2">
                   <Label
-                    htmlFor="manager-systems-notes"
-                    className="block mb-1 font-bold"
+                    htmlFor={`${item.id}-ok`}
+                    className="md:hidden mr-2 font-bold"
                   >
-                    הערות מנהל אחזקה:
+                    תקין:
+                  </Label>
+                  <Checkbox
+                    id={`${item.id}-ok`}
+                    checked={item.isOk === true}
+                    onCheckedChange={(checked) =>
+                      handleSystemItemChange(index, "isOk", checked)
+                    }
+                    className="mr-4 md:mr-0"
+                  />
+                </div>
+                <div className="flex justify-start md:justify-center items-center mb-2 md:mb-0 md:w-20 md:px-2">
+                  <Label
+                    htmlFor={`${item.id}-notok`}
+                    className="md:hidden mr-2 font-bold"
+                  >
+                    לא תקין:
+                  </Label>
+                  <Checkbox
+                    id={`${item.id}-notok`}
+                    checked={item.isNotOk === true}
+                    onCheckedChange={(checked) =>
+                      handleSystemItemChange(index, "isNotOk", checked)
+                    }
+                  />
+                </div>
+
+                {/* Comments */}
+                <div className="flex-1 md:px-2">
+                  <Label
+                    htmlFor={`${item.id}-comments`}
+                    className="md:hidden font-bold"
+                  >
+                    הערות:
                   </Label>
                   <Textarea
-                    id="manager-systems-notes"
-                    value={managerNotes.systems}
+                    id={`${item.id}-comments`}
+                    value={item.comments}
                     onChange={(e) =>
-                      setManagerNotes({
-                        ...managerNotes,
-                        systems: e.target.value,
-                      })
+                      handleSystemItemChange(index, "comments", e.target.value)
                     }
-                    className="w-full min-h-[80px]"
-                    placeholder="הערות נוספות של מנהל האחזקה..."
+                    className="w-full min-h-[40px] text-right"
                   />
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </div>
+              </div>
+            ))}
+
+            {/* Manager Systems Notes */}
+            <div className="bg-gray-100 p-4 rounded-b-md">
+              <Label
+                htmlFor="manager-systems-notes"
+                className="block mb-1 font-bold text-right"
+              >
+                הערות מנהל אחזקה:
+              </Label>
+              <Textarea
+                id="manager-systems-notes"
+                value={managerNotes.systems}
+                onChange={(e) =>
+                  setManagerNotes({
+                    ...managerNotes,
+                    systems: e.target.value,
+                  })
+                }
+                className="w-full min-h-[80px] text-right"
+                placeholder="הערות נוספות של מנהל האחזקה..."
+              />
+            </div>
+          </div>
         </div>
 
         {/* Submission Timestamp Display */}
