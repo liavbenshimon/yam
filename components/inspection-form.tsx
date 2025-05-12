@@ -52,7 +52,7 @@ export default function InspectionForm({
   });
   const [submissionTime, setSubmissionTime] = useState<string>("");
 
-  // טעינת הלקוחות של המנהל הנוכחי
+  // Loading the current manager's clients
   useEffect(() => {
     const manager = getManagerById(managerId);
     if (manager) {
@@ -280,7 +280,7 @@ export default function InspectionForm({
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // פונקציה ליצירת ה-PDF
+  // Function to generate the PDF
   const generatePDF = (formData: any) => {
     // Create a new jsPDF instance with RTL support
     const doc = new jsPDF({
@@ -289,7 +289,6 @@ export default function InspectionForm({
       format: "a4",
     });
 
-    // doc.addFileToVFS("Arial", atob(Font));
     // doc.addFont("NotoSansHebrew.ttf", "NotoSansHebrew", "normal");
     doc.addFont("NotoSansHebrew.ttf", "NotoSansHebrew", "normal");
     doc.setFont("NotoSansHebrew");
@@ -399,7 +398,7 @@ export default function InspectionForm({
     setIsGenerating(true);
     setErrorMessage(null);
 
-    // יצירת timestamp נוכחי
+    // Create a current timestamp
     const now = new Date();
     const timestamp = now.toLocaleString("he-IL", {
       year: "numeric",
@@ -419,15 +418,15 @@ export default function InspectionForm({
       generalItems,
       systemItems,
       managerNotes,
-      submissionTime: timestamp, // הוספת ה-timestamp לנתוני הטופס
+      // Adding the timestamp to the form data
     };
 
     try {
-      // אימות הנתונים בשרת
+      // Data validation on the server
       const result = await validateFormData(formData);
 
       if (result.success) {
-        // יצירת ה-PDF
+        // Generating the PDF
         generatePDF(formData);
       } else {
         setErrorMessage(result.error || "אירעה שגיאה באימות הנתונים");
@@ -454,7 +453,7 @@ export default function InspectionForm({
         <div className="flex justify-center mb-4">
           <div className="bg-white p-3 rounded-lg">
             <Image
-              src="/yamot-logo.png"
+              src="/yamlogo.jpg"
               alt="YAMOT Logo"
               width={150}
               height={100}
@@ -467,8 +466,8 @@ export default function InspectionForm({
         </h1>
         <p className="mt-2 text-[#EC8305]">טופס ביקורת לבניינים</p>
 
-        {/* כפתור התנתקות */}
-        <div className="absolute top-4 left-4">
+        {/* /* Logout Button */}
+        <div className="">
           <Button
             variant="ghost"
             size="sm"
