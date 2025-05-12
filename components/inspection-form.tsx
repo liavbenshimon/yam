@@ -23,6 +23,7 @@ import {
 import { getManagerById } from "@/lib/managers-data";
 import { useAuth } from "@/lib/auth";
 import { jsPDF } from "jspdf";
+import "../fonts/NotoSansHebrew";
 
 interface CheckItem {
   id: string;
@@ -289,10 +290,12 @@ export default function InspectionForm({
     });
 
     // doc.addFileToVFS("Arial", atob(Font));
-    doc.addFont("Ariel", "Arial", "normal");
+    // doc.addFont("NotoSansHebrew.ttf", "NotoSansHebrew", "normal");
+    doc.addFont("NotoSansHebrew.ttf", "NotoSansHebrew", "normal");
+    doc.setFont("NotoSansHebrew");
 
     // Add Hebrew font support
-    doc.setFont("Arial");
+    doc.setFont("NotoSansHebrew");
     doc.setR2L(true); // Set right-to-left for Hebrew text
 
     // Document title
