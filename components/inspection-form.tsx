@@ -22,9 +22,7 @@ import {
 
 import { getManagerById } from "@/lib/managers-data";
 import { useAuth } from "@/lib/auth";
-import * as pdfMake from "pdfmake/build/pdfmake";
-
-import { TDocumentDefinitions } from "pdfmake/interfaces";
+import { jsPDF } from "jspdf";
 
 interface CheckItem {
   id: string;
@@ -283,176 +281,102 @@ export default function InspectionForm({
 
   // פונקציה ליצירת ה-PDF
   const generatePDF = (formData: any) => {
-    // בדיקה שה-pdfMake זמין
-    if (!pdfMake) {
-      throw new Error("pdfMake is not loaded");
+    // Create a new jsPDF instance with RTL support
+    const doc = new jsPDF({
+      orientation: "p",
+      unit: "mm",
+      format: "a4",
+    });
+
+    // doc.addFileToVFS("Arial", atob(Font));
+    doc.addFont("Ariel", "Arial", "normal");
+
+    // Add Hebrew font support
+    doc.setFont("Arial");
+    doc.setR2L(true); // Set right-to-left for Hebrew text
+
+    // Document title
+    doc.setFontSize(20);
+    doc.text(
+      "ים ניהול ואחזקה – סיור ביקורת",
+      doc.internal.pageSize.width / 2,
+      20,
+      { align: "center" }
+    );
+
+    // Form details
+    doc.setFontSize(12);
+    doc.text(`שם המנהל: ${formData.inspector}`, 190, 40, { align: "right" });
+    doc.text(`תאריך: ${formData.date}`, 190, 48, { align: "right" });
+    doc.text(`כתובת הבניין: ${formData.address}`, 190, 56, { align: "right" });
+    doc.text(`זמן שליחת הטופס: ${formData.submissionTime}`, 190, 64, {
+      align: "right",
+    });
+
+    // General Inspection section title
+    doc.setFontSize(16);
+    doc.text("בדיקה כללית", 190, 80, { align: "right" });
+
+    // General Inspection items as simple text
+    let yPosition = 90;
+    doc.setFontSize(10);
+
+    formData.generalItems.forEach((item: CheckItem, index: number) => {
+      const status = item.isOk ? "תקין" : item.isNotOk ? "לא תקין" : "לא נבדק";
+      doc.text(`${item.topic}: ${status}`, 190, yPosition, { align: "right" });
+
+      if (item.comments) {
+        yPosition += 6;
+        doc.text(`הערות: ${item.comments}`, 180, yPosition, { align: "right" });
+      }
+
+      yPosition += 10;
+    });
+
+    // Manager general notes
+    if (formData.managerNotes?.general) {
+      doc.setFontSize(12);
+      doc.text("הערות מנהל אחזקה:", 190, yPosition, { align: "right" });
+      yPosition += 8;
+      doc.setFontSize(10);
+      doc.text(formData.managerNotes.general, 190, yPosition, {
+        align: "right",
+        maxWidth: 170,
+      });
+      yPosition += 15;
     }
 
-    // יצירת מערך של שורות טבלה עבור פריטי הבדיקה הכללית
-    const generalItemsRows = formData.generalItems.map((item: any) => {
+    // Systems Inspection section title
+    doc.setFontSize(16);
+    doc.text("בדיקת מערכות", 190, yPosition, { align: "right" });
+    yPosition += 10;
+
+    // Systems Inspection items as simple text
+    doc.setFontSize(10);
+
+    formData.systemItems.forEach((item: CheckItem, index: number) => {
       const status = item.isOk ? "תקין" : item.isNotOk ? "לא תקין" : "לא נבדק";
-      return [
-        { text: item.topic, alignment: "right" },
-        { text: status, alignment: "center" },
-        { text: item.comments || "", alignment: "right" },
-      ];
+      doc.text(`${item.topic}: ${status}`, 190, yPosition, { align: "right" });
+
+      if (item.comments) {
+        yPosition += 6;
+        doc.text(`הערות: ${item.comments}`, 180, yPosition, { align: "right" });
+      }
+
+      yPosition += 10;
     });
 
-    // יצירת מערך של שורות טבלה עבור פריטי בדיקת המערכות
-    const systemItemsRows = formData.systemItems.map((item: any) => {
-      const status = item.isOk ? "תקין" : item.isNotOk ? "לא תקין" : "לא נבדק";
-      return [
-        { text: item.topic, alignment: "right" },
-        { text: status, alignment: "center" },
-        { text: item.comments || "", alignment: "right" },
-      ];
-    });
-
-    const docDefinition: TDocumentDefinitions = {
-      // הגדרת כיוון המסמך מימין לשמאל
-      // rtl: true,
-      // הגדרת גופן ברירת מחדל
-      defaultStyle: {
-        font: "hebrew-font",
-      },
-      // תוכן המסמך
-      content: [
-        // כותרת ראשית
-        {
-          tocItem: "",
-          text: "ים ניהול ואחזקה – סיור ביקורת",
-          fontSize: 20,
-          bold: true,
-          alignment: "center",
-          margin: [0, 0, 0, 20],
-        },
-
-        // פרטי הטופס
-        {
-          columns: [
-            {
-              width: "50%",
-              text: [
-                { text: "שם המנהל: ", bold: true },
-                { text: formData.inspector || "", bold: false },
-                { text: "\n" },
-                { text: "תאריך: ", bold: true },
-                { text: formData.date || "", bold: false },
-              ],
-              alignment: "right",
-            },
-            {
-              width: "50%",
-              text: [
-                { text: "כתובת הבניין: ", bold: true },
-                { text: formData.address || "", bold: false },
-                { text: "\n" },
-                { text: "זמן שליחת הטופס: ", bold: true },
-                { text: formData.submissionTime || "", bold: false },
-              ],
-              alignment: "right",
-            },
-          ],
-          margin: [0, 0, 0, 20],
-        },
-
-        // כותרת בדיקה כללית
-        {
-          text: "בדיקה כללית",
-          fontSize: 16,
-          bold: true,
-          margin: [0, 10, 0, 10],
-        },
-
-        // טבלת בדיקה כללית
-        {
-          table: {
-            headerRows: 1,
-            widths: ["*", "auto", "*"],
-            body: [
-              [
-                { text: "נושא", style: "tableHeader", alignment: "right" },
-                { text: "סטטוס", style: "tableHeader", alignment: "center" },
-                { text: "הערות", style: "tableHeader", alignment: "right" },
-              ],
-              ...generalItemsRows,
-            ],
-          },
-          layout: {
-            hLineWidth: () => 1,
-            vLineWidth: () => 1,
-            hLineColor: () => "#aaa",
-            vLineColor: () => "#aaa",
-          },
-        },
-
-        // הערות מנהל אחזקה לבדיקה כללית
-        // formData.managerNotes?.general
-        //   ? {
-        //       text: [
-        //         { text: "הערות מנהל אחזקה: ", bold: true },
-        //         { text: formData.managerNotes.general },
-        //       ],
-        //       margin: [0, 10, 0, 20],
-        //     }
-        //   : {},
-
-        // כותרת בדיקת מערכות
-        {
-          text: "בדיקת מערכות",
-          fontSize: 16,
-          bold: true,
-          margin: [0, 10, 0, 10],
-        },
-
-        // טבלת בדיקת מערכות
-        {
-          table: {
-            headerRows: 1,
-            widths: ["*", "auto", "*"],
-            body: [
-              [
-                {
-                  text: "מערכת לבדיקה",
-                  style: "tableHeader",
-                  alignment: "right",
-                },
-                { text: "סטטוס", style: "tableHeader", alignment: "center" },
-                { text: "הערות", style: "tableHeader", alignment: "right" },
-              ],
-              ...systemItemsRows,
-            ],
-          },
-          layout: {
-            hLineWidth: () => 1,
-            vLineWidth: () => 1,
-            hLineColor: () => "#aaa",
-            vLineColor: () => "#aaa",
-          },
-        },
-
-        // הערות מנהל אחזקה לבדיקת מערכות
-        // formData.managerNotes?.systems
-        //   ? {
-        //       text: [
-        //         { text: "הערות מנהל אחזקה: ", bold: true },
-        //         { text: formData.managerNotes.systems },
-        //       ],
-        //       margin: [0, 10, 0, 20],
-        //     }
-        //   : {},
-      ],
-
-      // סגנונות
-      styles: {
-        tableHeader: {
-          bold: true,
-          fontSize: 12,
-          color: "white",
-          fillColor: "#024CAA",
-        },
-      },
-    };
+    // Manager systems notes
+    if (formData.managerNotes?.systems) {
+      doc.setFontSize(12);
+      doc.text("הערות מנהל אחזקה:", 190, yPosition, { align: "right" });
+      yPosition += 8;
+      doc.setFontSize(10);
+      doc.text(formData.managerNotes.systems, 190, yPosition, {
+        align: "right",
+        maxWidth: 170,
+      });
+    }
 
     // Create a filename with the current date and address
     const formattedDate = formData.date
@@ -463,7 +387,8 @@ export default function InspectionForm({
       .replace(/\s+/g, "_");
     const filename = `ביקורת_${sanitizedAddress}_${formattedDate}.pdf`;
 
-    pdfMake.createPdf(docDefinition, undefined, fonts).download(filename);
+    // Download the PDF
+    doc.save(filename);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -499,11 +424,6 @@ export default function InspectionForm({
       const result = await validateFormData(formData);
 
       if (result.success) {
-        // בדיקה שה-pdfMake נטען
-        if (!pdfMake) {
-          throw new Error("pdfMake is not loaded. Please try again.");
-        }
-
         // יצירת ה-PDF
         generatePDF(formData);
       } else {
