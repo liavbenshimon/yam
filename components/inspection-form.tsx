@@ -3,6 +3,7 @@
 import type React from "react";
 
 import { useState, useEffect } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,10 +19,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import Script from "next/script";
+
 import { getManagerById } from "@/lib/managers-data";
 import { useAuth } from "@/lib/auth";
 import * as pdfMake from "pdfmake/build/pdfmake";
+
+import { TDocumentDefinitions } from "pdfmake/interfaces";
 
 interface CheckItem {
   id: string;
@@ -29,13 +32,6 @@ interface CheckItem {
   isOk: boolean | null;
   isNotOk: boolean | null;
   comments: string;
-}
-
-// הגדרת טיפוס עבור pdfMake הגלובלי
-declare global {
-  interface Window {
-    pdfMake: any;
-  }
 }
 
 interface InspectionFormProps {
@@ -56,8 +52,6 @@ export default function InspectionForm({
     systems: "",
   });
   const [submissionTime, setSubmissionTime] = useState<string>("");
-  const [pdfMakeLoaded, setPdfMakeLoaded] = useState(false);
-  const [vfsFontsLoaded, setVfsFontsLoaded] = useState(false);
 
   // טעינת הלקוחות של המנהל הנוכחי
   useEffect(() => {
@@ -258,7 +252,7 @@ export default function InspectionForm({
       newItems[index].isOk = false;
       newItems[index].isNotOk = true;
     } else {
-      newItems[index][field] = value;
+      (newItems[index] as any)[field] = value;
     }
 
     setGeneralItems(newItems);
@@ -278,7 +272,7 @@ export default function InspectionForm({
       newItems[index].isOk = false;
       newItems[index].isNotOk = true;
     } else {
-      newItems[index][field] = value;
+      (newItems[index] as any)[field] = value;
     }
 
     setSystemItems(newItems);
@@ -314,13 +308,12 @@ export default function InspectionForm({
       ];
     });
 
-    // הגדרת מסמך ה-PDF
-    const docDefinition = {
+    const docDefinition: TDocumentDefinitions = {
       // הגדרת כיוון המסמך מימין לשמאל
       // rtl: true,
       // הגדרת גופן ברירת מחדל
       defaultStyle: {
-        font: "Roboto",
+        font: "hebrew-font",
       },
       // תוכן המסמך
       content: [
@@ -394,15 +387,15 @@ export default function InspectionForm({
         },
 
         // הערות מנהל אחזקה לבדיקה כללית
-        formData.managerNotes?.general
-          ? {
-              text: [
-                { text: "הערות מנהל אחזקה: ", bold: true },
-                { text: formData.managerNotes.general },
-              ],
-              margin: [0, 10, 0, 20],
-            }
-          : {},
+        // formData.managerNotes?.general
+        //   ? {
+        //       text: [
+        //         { text: "הערות מנהל אחזקה: ", bold: true },
+        //         { text: formData.managerNotes.general },
+        //       ],
+        //       margin: [0, 10, 0, 20],
+        //     }
+        //   : {},
 
         // כותרת בדיקת מערכות
         {
@@ -439,15 +432,15 @@ export default function InspectionForm({
         },
 
         // הערות מנהל אחזקה לבדיקת מערכות
-        formData.managerNotes?.systems
-          ? {
-              text: [
-                { text: "הערות מנהל אחזקה: ", bold: true },
-                { text: formData.managerNotes.systems },
-              ],
-              margin: [0, 10, 0, 20],
-            }
-          : {},
+        // formData.managerNotes?.systems
+        //   ? {
+        //       text: [
+        //         { text: "הערות מנהל אחזקה: ", bold: true },
+        //         { text: formData.managerNotes.systems },
+        //       ],
+        //       margin: [0, 10, 0, 20],
+        //     }
+        //   : {},
       ],
 
       // סגנונות
@@ -470,8 +463,7 @@ export default function InspectionForm({
       .replace(/\s+/g, "_");
     const filename = `ביקורת_${sanitizedAddress}_${formattedDate}.pdf`;
 
-    // יצירת ה-PDF והורדתו
-    pdfMake.createPdf(docDefinition).download(filename);
+    pdfMake.createPdf(docDefinition, undefined, fonts).download(filename);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -529,32 +521,11 @@ export default function InspectionForm({
     }
   };
 
-  // טעינת סקריפטים של pdfmake
-  const handlePdfMakeLoad = () => {
-    setPdfMakeLoaded(true);
-  };
-
-  const handleVfsFontsLoad = () => {
-    setVfsFontsLoaded(true);
-  };
-
   return (
     <div
       className="max-w-5xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden"
       dir="rtl"
     >
-      {/* טעינת סקריפטים של pdfmake */}
-      <Script
-        src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"
-        onLoad={handlePdfMakeLoad}
-        strategy="beforeInteractive"
-      />
-      <Script
-        src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"
-        onLoad={handleVfsFontsLoad}
-        strategy="beforeInteractive"
-      />
-
       {/* Header */}
       <div className="bg-[#091057] text-white p-4 md:p-6 text-center">
         <div className="flex justify-center mb-4">
@@ -843,12 +814,7 @@ export default function InspectionForm({
           <Button
             type="submit"
             className="bg-[#024CAA] hover:bg-[#024CAA]/90 text-white px-8 py-2 rounded-md flex items-center gap-2 text-lg"
-            disabled={
-              isGenerating ||
-              !selectedClient ||
-              !pdfMakeLoaded ||
-              !vfsFontsLoaded
-            }
+            disabled={isGenerating || !selectedClient}
           >
             {isGenerating ? (
               <>
@@ -866,12 +832,6 @@ export default function InspectionForm({
           {!selectedClient && !isGenerating && (
             <p className="mt-2 text-red-500 text-sm">
               יש לבחור לקוח לפני הורדת ה-PDF
-            </p>
-          )}
-
-          {(!pdfMakeLoaded || !vfsFontsLoaded) && (
-            <p className="mt-2 text-amber-500 text-sm">
-              טוען ספריות PDF... אנא המתן
             </p>
           )}
 
