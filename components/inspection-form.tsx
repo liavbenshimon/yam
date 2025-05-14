@@ -23,6 +23,7 @@ import {
 import { getManagerById } from "@/lib/managers-data";
 import { useAuth } from "@/lib/auth";
 import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 import "../fonts/NotoSansHebrew";
 import { twMerge } from "tailwind-merge";
 
@@ -282,7 +283,11 @@ export default function InspectionForm({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Function to generate the PDF
-  const generatePDF = (formData: any) => {
+  const generatePDF = async (
+    formData: any,
+    generalSectionEl: HTMLElement,
+    systemsSectionEl: HTMLElement
+  ) => {
     // Create a new jsPDF instance with RTL support
     const doc = new jsPDF({
       orientation: "p",
@@ -290,13 +295,9 @@ export default function InspectionForm({
       format: "a4",
     });
 
+    // Add metadata to the first page
     doc.addImage("/yamlogo.jpg", "PNG", 10, 10, 50, 50);
-
-    // doc.addFont("NotoSansHebrew.ttf", "NotoSansHebrew", "normal");
     doc.addFont("NotoSansHebrew.ttf", "NotoSansHebrew", "normal");
-    doc.setFont("NotoSansHebrew");
-
-    // Add Hebrew font support
     doc.setFont("NotoSansHebrew");
     doc.setR2L(true); // Set right-to-left for Hebrew text
 
@@ -318,73 +319,26 @@ export default function InspectionForm({
       align: "right",
     });
 
-    // General Inspection section title
-    doc.setFontSize(16);
-    doc.text("בדיקה כללית", 190, 80, { align: "right" });
+    // Capture the general section as an image
+    const generalCanvas = await html2canvas(generalSectionEl);
+    const generalImgData = generalCanvas.toDataURL("image/png");
+    const imgWidth = 190; // Fit within the page width
+    const imgHeight = (generalCanvas.height * imgWidth) / generalCanvas.width; // Maintain aspect ratio
 
-    // General Inspection items as simple text
-    let yPosition = 90;
-    doc.setFontSize(10);
+    // Add the general section image to the PDF
+    doc.addImage(generalImgData, "PNG", 10, 80, imgWidth, imgHeight);
 
-    formData.generalItems.forEach((item: CheckItem, index: number) => {
-      const status = item.isOk ? "תקין" : item.isNotOk ? "לא תקין" : "לא נבדק";
-      doc.text(`${item.topic}: ${status}`, 190, yPosition, { align: "right" });
-
-      if (item.comments) {
-        yPosition += 6;
-        doc.text(`הערות: ${item.comments}`, 180, yPosition, { align: "right" });
-      }
-
-      yPosition += 10;
-    });
-
-    // Manager general notes
-    if (formData.managerNotes?.general) {
-      doc.setFontSize(12);
-      doc.text("הערות מנהל אחזקה:", 190, yPosition, { align: "right" });
-      yPosition += 8;
-      doc.setFontSize(10);
-      doc.text(formData.managerNotes.general, 190, yPosition, {
-        align: "right",
-        maxWidth: 170,
-      });
-      yPosition += 15;
-    }
-
-    // Add new page for systems inspection
+    // Add a new page for the systems section
     doc.addPage();
-    yPosition = 20; // Reset y position for new page
 
-    doc.setFontSize(16);
-    doc.text("בדיקת מערכות", 190, yPosition, { align: "right" });
-    yPosition += 10;
+    // Capture the systems section as an image
+    const systemsCanvas = await html2canvas(systemsSectionEl);
+    const systemsImgData = systemsCanvas.toDataURL("image/png");
+    const systemsImgHeight =
+      (systemsCanvas.height * imgWidth) / systemsCanvas.width; // Maintain aspect ratio
 
-    // Systems Inspection items as simple text
-    doc.setFontSize(10);
-
-    formData.systemItems.forEach((item: CheckItem, index: number) => {
-      const status = item.isOk ? "תקין" : item.isNotOk ? "לא תקין" : "לא נבדק";
-      doc.text(`${item.topic}: ${status}`, 190, yPosition, { align: "right" });
-
-      if (item.comments) {
-        yPosition += 6;
-        doc.text(`הערות: ${item.comments}`, 180, yPosition, { align: "right" });
-      }
-
-      yPosition += 10;
-    });
-
-    // Manager systems notes
-    if (formData.managerNotes?.systems) {
-      doc.setFontSize(12);
-      doc.text("הערות מנהל אחזקה:", 190, yPosition, { align: "right" });
-      yPosition += 8;
-      doc.setFontSize(10);
-      doc.text(formData.managerNotes.systems, 190, yPosition, {
-        align: "right",
-        maxWidth: 170,
-      });
-    }
+    // Add the systems section image to the PDF
+    doc.addImage(systemsImgData, "PNG", 10, 10, imgWidth, systemsImgHeight);
 
     // Create a filename with the current date and address
     const formattedDate = formData.date
@@ -395,7 +349,7 @@ export default function InspectionForm({
       .replace(/\s+/g, "_");
     const filename = `ביקורת_${sanitizedAddress}_${formattedDate}.pdf`;
 
-    // Download the PDF
+    // Save the PDF
     doc.save(filename);
   };
 
@@ -424,7 +378,6 @@ export default function InspectionForm({
       generalItems,
       systemItems,
       managerNotes,
-      // Adding the timestamp to the form data
     };
 
     try {
@@ -433,7 +386,14 @@ export default function InspectionForm({
 
       if (result.success) {
         // Generating the PDF
-        generatePDF(formData);
+        const generalSectionEl = document.getElementById("general-section");
+        const systemsSectionEl = document.getElementById("systems-section");
+
+        if (generalSectionEl && systemsSectionEl) {
+          await generatePDF(formData, generalSectionEl, systemsSectionEl);
+        } else {
+          throw new Error("Missing sections for PDF generation");
+        }
       } else {
         setErrorMessage(result.error || "אירעה שגיאה באימות הנתונים");
       }
@@ -548,7 +508,7 @@ export default function InspectionForm({
         </div>
 
         {/* General Inspection Section - Flexbox Layout */}
-        <div className="mb-8">
+        <div id="general-section" className="mb-8">
           <h2 className="text-xl font-bold mb-4 text-[#091057]">בדיקה כללית</h2>
           {/* Header Row (visible on larger screens) */}
           <div className="hidden md:flex bg-[#024CAA] text-white p-2 rounded-t-md">
@@ -652,7 +612,7 @@ export default function InspectionForm({
         </div>
 
         {/* Systems Inspection Section - Flexbox Layout */}
-        <div className="mb-8">
+        <div id="systems-section" className="mb-8">
           <h2 className="text-xl font-bold mb-4 text-[#091057]">
             בדיקת מערכות
           </h2>
