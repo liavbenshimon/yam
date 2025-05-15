@@ -285,13 +285,30 @@ export default function InspectionForm({
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  const formatDateForDisplay = (dateStr: string) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("he-IL", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+  };
 
   // Function to generate the PDF
   const generatePDF = async () => {
+    setIsPrinting(true);
+    await new Promise((res) => setTimeout(res, 300)); // המתנה קצרה לרינדור מחדש
+
     const doc = new jsPDF({
       orientation: "p",
       unit: "mm",
       format: "a4",
+      compress: true, // דחיסת PDF (חוסך גודל קובץ)
+      putOnlyUsedFonts: true, // רק פונטים שבשימוש
+      floatPrecision: 16,
     });
 
     // First page: Capture the logo, admin name, customer, and date
@@ -338,6 +355,8 @@ export default function InspectionForm({
     // Save the PDF
     const filename = `inspection_${new Date().toISOString().slice(0, 10)}.pdf`;
     doc.save(filename);
+
+    setIsPrinting(false); // חזרה למצב רגיל
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -454,22 +473,26 @@ export default function InspectionForm({
                 >
                   שם הלקוח:
                 </Label>
-                <Select
-                  value={selectedClient}
-                  onValueChange={setSelectedClient}
-                  dir="rtl" // Ensure dropdown opens correctly in RTL
-                >
-                  <SelectTrigger className="w-full text-right">
-                    <SelectValue placeholder="בחר לקוח" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableClients.map((client) => (
-                      <SelectItem key={client} value={client}>
-                        {client}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {isPrinting ? (
+                  <p className="text-right">{selectedClient}</p>
+                ) : (
+                  <Select
+                    value={selectedClient}
+                    onValueChange={setSelectedClient}
+                    dir="rtl" // Ensure dropdown opens correctly in RTL
+                  >
+                    <SelectTrigger className="w-full text-right">
+                      <SelectValue placeholder="בחר לקוח" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableClients.map((client) => (
+                        <SelectItem key={client} value={client}>
+                          {client}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               <div>
                 <Label
@@ -478,15 +501,19 @@ export default function InspectionForm({
                 >
                   תאריך:
                 </Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full text-right"
-                  required
-                  dir="rtl" // Hint for date picker alignment if needed
-                />
+                {isGenerating ? (
+                  <p className="text-right">{formatDateForDisplay(date)}</p>
+                ) : (
+                  <Input
+                    id="date"
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="w-full text-right"
+                    required
+                    dir="rtl"
+                  />
+                )}
               </div>
             </div>
           </div>
