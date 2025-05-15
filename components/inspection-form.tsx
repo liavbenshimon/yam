@@ -296,33 +296,43 @@ export default function InspectionForm({
 
     // First page: Capture the logo, admin name, customer, and date
     if (formRef.current) {
-      const canvas = await html2canvas(formRef.current);
+      const canvas = await html2canvas(formRef.current, {
+        scale: 3, // הגברת הרזולוציה
+        useCORS: true,
+      });
       const imgData = canvas.toDataURL("image/png");
-      const imgWidth = 210; // A4 width in mm
+      const margin = 10;
+      const imgWidth = 210 - margin * 2; // רוחב הדף פחות שוליים
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      // Add the first page with metadata
-      doc.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      doc.addImage(imgData, "PNG", margin, margin, imgWidth, imgHeight);
     }
 
     // Second page: Capture systemItems
     doc.addPage();
     if (systemsRef.current) {
-      const canvas = await html2canvas(systemsRef.current);
+      const canvas = await html2canvas(systemsRef.current, {
+        scale: 3,
+        useCORS: true,
+      });
       const imgData = canvas.toDataURL("image/png");
-      const imgWidth = 210; // A4 width in mm
+      const margin = 10;
+      const imgWidth = 210 - margin * 2;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      doc.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      doc.addImage(imgData, "PNG", margin, margin, imgWidth, imgHeight);
     }
 
     // Third page: Capture generalItems
     doc.addPage();
     if (generalRef.current) {
-      const canvas = await html2canvas(generalRef.current);
+      const canvas = await html2canvas(generalRef.current, {
+        scale: 3,
+        useCORS: true,
+      });
       const imgData = canvas.toDataURL("image/png");
-      const imgWidth = 210; // A4 width in mm
+      const margin = 10;
+      const imgWidth = 210 - margin * 2;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      doc.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      doc.addImage(imgData, "PNG", margin, margin, imgWidth, imgHeight);
     }
 
     // Save the PDF
@@ -378,99 +388,106 @@ export default function InspectionForm({
 
   return (
     <div
-      ref={formRef}
       className="max-w-5xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden"
       dir="rtl"
     >
-      {/* Header */}
-      <div className="bg-[#091057] text-white p-4 md:p-6 text-center">
-        <div className="flex justify-center mb-4">
-          <div className="bg-white p-3 rounded-lg">
-            <Image
-              src="/yamlogo.jpg"
-              alt="YAMOT Logo"
-              width={150}
-              height={100}
-              priority
-            />
-          </div>
-        </div>
-        <h1 className="text-xl md:text-3xl font-bold">
-          ים ניהול ואחזקה – סיור ביקורת
-        </h1>
-        <p className="mt-2 text-[#EC8305]">מצוינות במבחן היומיומי</p>
-
-        {/* /* Logout Button */}
-        <div className="">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={logout}
-            className="text-white hover:text-[#EC8305] flex items-center gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            התנתק
-          </Button>
-        </div>
-      </div>
-
       <form onSubmit={handleSubmit} className="p-4 md:p-6">
-        {/* פרטי המנהל והבניין - Flexbox Layout */}
-        <div className="mb-8 flex flex-col md:flex-row gap-4">
-          {/* Manager Details */}
-          <div className="flex-1 border border-[#DBD3D3] rounded-md p-4">
-            <div className="bg-[#024CAA] text-white p-2 rounded-t-md -m-4 mb-4">
-              <h3 className="font-bold text-right">פרטי המנהל</h3>
-            </div>
-            <div className="mb-2">
-              <Label htmlFor="manager" className="block mb-1 text-right">
-                שם המנהל:
-              </Label>
-              <div className="p-2 bg-gray-50 rounded border border-gray-200 text-right">
-                {managerName}
+        <div className="rounded-lg overflow-hidden" ref={formRef}>
+          {/* Header */}
+          <div className="bg-[#091057] text-white p-4 md:p-6 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="bg-white p-3 rounded-lg">
+                <Image
+                  src="/yamlogo.jpg"
+                  alt="YAMOT Logo"
+                  width={150}
+                  height={100}
+                  priority
+                />
               </div>
             </div>
-          </div>
-
-          {/* Building and Date Details */}
-          <div className="flex-1 border border-[#DBD3D3] rounded-md p-4">
-            <div className="bg-[#024CAA] text-white p-2 rounded-t-md -m-4 mb-4">
-              <h3 className="font-bold text-right">פרטי הבניין ותאריך</h3>
-            </div>
-            <div className="mb-2">
-              <Label htmlFor="client" className="block mb-1 text-right">
-                שם הלקוח:
-              </Label>
-              <Select
-                value={selectedClient}
-                onValueChange={setSelectedClient}
-                dir="rtl" // Ensure dropdown opens correctly in RTL
+            <h1 className="text-xl md:text-3xl font-bold">
+              ים ניהול ואחזקה – סיור ביקורת
+            </h1>
+            <p className="mt-2 text-[#EC8305]">מצוינות במבחן היומיומי</p>
+            {/* /* Logout Button */}
+            <div className="">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={logout}
+                className="text-white hover:text-[#EC8305] flex items-center gap-2"
               >
-                <SelectTrigger className="w-full text-right">
-                  <SelectValue placeholder="בחר לקוח" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableClients.map((client) => (
-                    <SelectItem key={client} value={client}>
-                      {client}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <LogOut className="h-4 w-4" />
+                התנתק
+              </Button>
             </div>
-            <div>
-              <Label htmlFor="date" className="block mb-1 text-right">
-                תאריך:
-              </Label>
-              <Input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full text-right"
-                required
-                dir="rtl" // Hint for date picker alignment if needed
-              />
+          </div>
+          {/* פרטי המנהל והבניין - Flexbox Layout */}
+          <div className="mb-4 mt-4 flex flex-col md:flex-row gap-4">
+            {/* Manager Details */}
+            <div className="flex-1 border border-[#DBD3D3] rounded-md p-4">
+              <div className="bg-[#024CAA] text-white p-2 rounded-t-md -m-4 mb-4">
+                <h3 className="font-bold text-right">פרטי המנהל</h3>
+              </div>
+              <div className="mb-2">
+                <Label
+                  htmlFor="manager"
+                  className="block mb-1 text-right [line-height:3]"
+                >
+                  שם המנהל:
+                </Label>
+                <div className="p-2 bg-gray-50 rounded border border-gray-200 text-right">
+                  {managerName}
+                </div>
+              </div>
+            </div>
+            {/* Building and Date Details */}
+            <div className="flex-1 border border-[#DBD3D3] rounded-md p-4">
+              <div className="bg-[#024CAA] text-white p-2 rounded-t-md -m-4 mb-4">
+                <h3 className="font-bold text-right">פרטי הבניין ותאריך</h3>
+              </div>
+              <div className="mb-2">
+                <Label
+                  htmlFor="client"
+                  className="block mb-1 text-right [line-height:3]"
+                >
+                  שם הלקוח:
+                </Label>
+                <Select
+                  value={selectedClient}
+                  onValueChange={setSelectedClient}
+                  dir="rtl" // Ensure dropdown opens correctly in RTL
+                >
+                  <SelectTrigger className="w-full text-right">
+                    <SelectValue placeholder="בחר לקוח" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableClients.map((client) => (
+                      <SelectItem key={client} value={client}>
+                        {client}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label
+                  htmlFor="date"
+                  className="block mb-1 text-right [line-height:3]"
+                >
+                  תאריך:
+                </Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full text-right"
+                  required
+                  dir="rtl" // Hint for date picker alignment if needed
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -559,7 +576,7 @@ export default function InspectionForm({
             <div className="bg-gray-100 p-4 rounded-b-md">
               <Label
                 htmlFor="manager-general-notes"
-                className="block mb-1 font-bold text-right"
+                className="block mb-1 font-bold text-right leading-loose"
               >
                 הערות מנהל אחזקה:
               </Label>
@@ -665,7 +682,7 @@ export default function InspectionForm({
             <div className="bg-gray-100 p-4 rounded-b-md">
               <Label
                 htmlFor="manager-systems-notes"
-                className="block mb-1 font-bold text-right"
+                className="block mb-1 font-bold text-right leading-loose"
               >
                 הערות מנהל אחזקה:
               </Label>
