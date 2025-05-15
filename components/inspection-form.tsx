@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +53,10 @@ export default function InspectionForm({
     systems: "",
   });
   const [submissionTime, setSubmissionTime] = useState<string>("");
+
+  const formRef = useRef<HTMLDivElement | null>(null);
+  const systemsRef = useRef<HTMLDivElement | null>(null);
+  const generalRef = useRef<HTMLDivElement | null>(null);
 
   // Loading the current manager's clients
   useEffect(() => {
@@ -283,73 +287,46 @@ export default function InspectionForm({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Function to generate the PDF
-  const generatePDF = async (
-    formData: any,
-    generalSectionEl: HTMLElement,
-    systemsSectionEl: HTMLElement
-  ) => {
-    // Create a new jsPDF instance with RTL support
+  const generatePDF = async () => {
     const doc = new jsPDF({
       orientation: "p",
       unit: "mm",
       format: "a4",
     });
 
-    // Add metadata to the first page
-    doc.addImage("/yamlogo.jpg", "PNG", 10, 10, 50, 50);
-    doc.addFont("NotoSansHebrew.ttf", "NotoSansHebrew", "normal");
-    doc.setFont("NotoSansHebrew");
-    doc.setR2L(true); // Set right-to-left for Hebrew text
+    // First page: Capture the logo, admin name, customer, and date
+    if (formRef.current) {
+      const canvas = await html2canvas(formRef.current);
+      const imgData = canvas.toDataURL("image/png");
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    // Document title
-    doc.setFontSize(20);
-    doc.text(
-      "ים ניהול ואחזקה – סיור ביקורת",
-      doc.internal.pageSize.width / 2,
-      20,
-      { align: "center" }
-    );
+      // Add the first page with metadata
+      doc.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+    }
 
-    // Form details
-    doc.setFontSize(12);
-    doc.text(`שם המנהל: ${formData.inspector}`, 190, 40, { align: "right" });
-    doc.text(`תאריך: ${formData.date}`, 190, 48, { align: "right" });
-    doc.text(`כתובת הבניין: ${formData.address}`, 190, 56, { align: "right" });
-    doc.text(`זמן שליחת הטופס: ${submissionTime}`, 190, 64, {
-      align: "right",
-    });
-
-    // Capture the general section as an image
-    const generalCanvas = await html2canvas(generalSectionEl);
-    const generalImgData = generalCanvas.toDataURL("image/png");
-    const imgWidth = 190; // Fit within the page width
-    const imgHeight = (generalCanvas.height * imgWidth) / generalCanvas.width; // Maintain aspect ratio
-
-    // Add the general section image to the PDF
-    doc.addImage(generalImgData, "PNG", 10, 80, imgWidth, imgHeight);
-
-    // Add a new page for the systems section
+    // Second page: Capture systemItems
     doc.addPage();
+    if (systemsRef.current) {
+      const canvas = await html2canvas(systemsRef.current);
+      const imgData = canvas.toDataURL("image/png");
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      doc.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+    }
 
-    // Capture the systems section as an image
-    const systemsCanvas = await html2canvas(systemsSectionEl);
-    const systemsImgData = systemsCanvas.toDataURL("image/png");
-    const systemsImgHeight =
-      (systemsCanvas.height * imgWidth) / systemsCanvas.width; // Maintain aspect ratio
-
-    // Add the systems section image to the PDF
-    doc.addImage(systemsImgData, "PNG", 10, 10, imgWidth, systemsImgHeight);
-
-    // Create a filename with the current date and address
-    const formattedDate = formData.date
-      ? formData.date.replace(/-/g, "")
-      : new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    const sanitizedAddress = formData.address
-      .replace(/[^\w\s]/gi, "")
-      .replace(/\s+/g, "_");
-    const filename = `ביקורת_${sanitizedAddress}_${formattedDate}.pdf`;
+    // Third page: Capture generalItems
+    doc.addPage();
+    if (generalRef.current) {
+      const canvas = await html2canvas(generalRef.current);
+      const imgData = canvas.toDataURL("image/png");
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      doc.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+    }
 
     // Save the PDF
+    const filename = `inspection_${new Date().toISOString().slice(0, 10)}.pdf`;
     doc.save(filename);
   };
 
@@ -358,7 +335,6 @@ export default function InspectionForm({
     setIsGenerating(true);
     setErrorMessage(null);
 
-    // Create a current timestamp
     const now = new Date();
     const timestamp = now.toLocaleString("he-IL", {
       year: "numeric",
@@ -381,19 +357,10 @@ export default function InspectionForm({
     };
 
     try {
-      // Data validation on the server
       const result = await validateFormData(formData);
 
       if (result.success) {
-        // Generating the PDF
-        const generalSectionEl = document.getElementById("general-section");
-        const systemsSectionEl = document.getElementById("systems-section");
-
-        if (generalSectionEl && systemsSectionEl) {
-          await generatePDF(formData, generalSectionEl, systemsSectionEl);
-        } else {
-          throw new Error("Missing sections for PDF generation");
-        }
+        await generatePDF();
       } else {
         setErrorMessage(result.error || "אירעה שגיאה באימות הנתונים");
       }
@@ -411,6 +378,7 @@ export default function InspectionForm({
 
   return (
     <div
+      ref={formRef}
       className="max-w-5xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden"
       dir="rtl"
     >
@@ -508,7 +476,7 @@ export default function InspectionForm({
         </div>
 
         {/* General Inspection Section - Flexbox Layout */}
-        <div id="general-section" className="mb-8">
+        <div ref={generalRef} id="general-section" className="mb-8">
           <h2 className="text-xl font-bold mb-4 text-[#091057]">בדיקה כללית</h2>
           {/* Header Row (visible on larger screens) */}
           <div className="hidden md:flex bg-[#024CAA] text-white p-2 rounded-t-md">
@@ -612,7 +580,7 @@ export default function InspectionForm({
         </div>
 
         {/* Systems Inspection Section - Flexbox Layout */}
-        <div id="systems-section" className="mb-8">
+        <div ref={systemsRef} id="systems-section" className="mb-8">
           <h2 className="text-xl font-bold mb-4 text-[#091057]">
             בדיקת מערכות
           </h2>
