@@ -302,63 +302,175 @@ export default function InspectionForm({
     setIsPrinting(true);
     await new Promise((res) => setTimeout(res, 300)); // המתנה קצרה לרינדור מחדש
 
+    // יצירת ה-PDF עם הגדרות קבועות
     const doc = new jsPDF({
       orientation: "p",
       unit: "mm",
       format: "a4",
-      compress: true, // דחיסת PDF (חוסך גודל קובץ)
-      putOnlyUsedFonts: true, // רק פונטים שבשימוש
+      compress: true,
+      putOnlyUsedFonts: true,
       floatPrecision: 16,
     });
 
-    // First page: Capture the logo, admin name, customer, and date
-    if (formRef.current) {
-      const canvas = await html2canvas(formRef.current, {
-        scale: 3, // הגברת הרזולוציה
-        useCORS: true,
-      });
-      const imgData = canvas.toDataURL("image/png");
-      const margin = 10;
-      const imgWidth = 210 - margin * 2; // רוחב הדף פחות שוליים
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      doc.addImage(imgData, "PNG", margin, margin, imgWidth, imgHeight);
+    // שמירת הסגנונות המקוריים של הרפרנסים
+    const originalStyles = {
+      form: saveOriginalStyles(formRef.current),
+      systems: saveOriginalStyles(systemsRef.current),
+      general: saveOriginalStyles(generalRef.current),
+    };
+
+    try {
+      // טיפול בדף ראשון
+      if (formRef.current) {
+        // קביעת סגנונות קבועים לפני הלכידה
+        applyFixedStyles(formRef.current);
+
+        const canvas = await html2canvas(formRef.current, {
+          scale: Math.min(window.devicePixelRatio, 2), // התאמה לרזולוציית המכשיר
+          useCORS: true,
+          allowTaint: true,
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 794, // רוחב קבוע בפיקסלים (A4)
+          windowHeight: 1123,
+          logging: false,
+        });
+
+        // שחזור הסגנונות המקוריים
+        restoreOriginalStyles(formRef.current, originalStyles.form);
+
+        // מיקום והכנסה לPDF
+        const margin = 10;
+        const imgWidth = 210 - margin * 2; // רוחב הדף פחות שוליים
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        doc.addImage(
+          canvas.toDataURL("image/png"),
+          "PNG",
+          margin,
+          margin,
+          imgWidth,
+          imgHeight
+        );
+      }
+
+      // טיפול בדף שני
+      doc.addPage();
+      if (systemsRef.current) {
+        applyFixedStyles(systemsRef.current);
+
+        const canvas = await html2canvas(systemsRef.current, {
+          scale: Math.min(window.devicePixelRatio, 2),
+          useCORS: true,
+          allowTaint: true,
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 794,
+          windowHeight: 1123,
+          logging: false,
+        });
+
+        restoreOriginalStyles(systemsRef.current, originalStyles.systems);
+
+        const margin = 10;
+        const imgWidth = 210 - margin * 2;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        doc.addImage(
+          canvas.toDataURL("image/png"),
+          "PNG",
+          margin,
+          margin,
+          imgWidth,
+          imgHeight
+        );
+      }
+
+      // טיפול בדף שלישי
+      doc.addPage();
+      if (generalRef.current) {
+        applyFixedStyles(generalRef.current);
+
+        const canvas = await html2canvas(generalRef.current, {
+          scale: Math.min(window.devicePixelRatio, 2),
+          useCORS: true,
+          allowTaint: true,
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 794,
+          windowHeight: 1123,
+          logging: false,
+        });
+
+        restoreOriginalStyles(generalRef.current, originalStyles.general);
+
+        const margin = 10;
+        const imgWidth = 210 - margin * 2;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        doc.addImage(
+          canvas.toDataURL("image/png"),
+          "PNG",
+          margin,
+          margin,
+          imgWidth,
+          imgHeight
+        );
+      }
+
+      // שמירת ה-PDF
+      const filename = `inspection_${new Date()
+        .toISOString()
+        .slice(0, 10)}.pdf`;
+      doc.save(filename);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      setErrorMessage(
+        `אירעה שגיאה ביצירת ה-PDF: ${
+          error instanceof Error ? error.message : "שגיאה לא ידועה"
+        }`
+      );
+    } finally {
+      setIsPrinting(false);
     }
-
-    // Second page: Capture systemItems
-    doc.addPage();
-    if (systemsRef.current) {
-      const canvas = await html2canvas(systemsRef.current, {
-        scale: 3,
-        useCORS: true,
-      });
-      const imgData = canvas.toDataURL("image/png");
-      const margin = 10;
-      const imgWidth = 210 - margin * 2;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      doc.addImage(imgData, "PNG", margin, margin, imgWidth, imgHeight);
-    }
-
-    // Third page: Capture generalItems
-    doc.addPage();
-    if (generalRef.current) {
-      const canvas = await html2canvas(generalRef.current, {
-        scale: 3,
-        useCORS: true,
-      });
-      const imgData = canvas.toDataURL("image/png");
-      const margin = 10;
-      const imgWidth = 210 - margin * 2;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      doc.addImage(imgData, "PNG", margin, margin, imgWidth, imgHeight);
-    }
-
-    // Save the PDF
-    const filename = `inspection_${new Date().toISOString().slice(0, 10)}.pdf`;
-    doc.save(filename);
-
-    setIsPrinting(false); // חזרה למצב רגיל
   };
 
+  // פונקציית עזר לשמירת סגנונות מקוריים
+  function saveOriginalStyles(element) {
+    if (!element) return {};
+
+    return {
+      width: element.style.width,
+      height: element.style.height,
+      maxWidth: element.style.maxWidth,
+      position: element.style.position,
+      transform: element.style.transform,
+      overflow: element.style.overflow,
+    };
+  }
+
+  // פונקציית עזר לקביעת סגנונות קבועים לפני הלכידה
+  function applyFixedStyles(element) {
+    if (!element) return;
+
+    // הגדרת רוחב קבוע שישמר על פרופורציה זהה בכל המכשירים
+    element.style.width = "794px"; // רוחב של דף A4 בפיקסלים
+    element.style.maxWidth = "none";
+    element.style.position = "absolute";
+    element.style.transform = "scale(1)";
+    element.style.overflow = "hidden";
+  }
+
+  // פונקציית עזר לשחזור הסגנונות המקוריים
+  function restoreOriginalStyles(element, originalStyles) {
+    if (!element || !originalStyles) return;
+
+    element.style.width = originalStyles.width;
+    element.style.height = originalStyles.height;
+    element.style.maxWidth = originalStyles.maxWidth;
+    element.style.position = originalStyles.position;
+    element.style.transform = originalStyles.transform;
+    element.style.overflow = originalStyles.overflow;
+  }
+
+  // פונקציית ה-submit נשארת כמעט זהה
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsGenerating(true);
@@ -429,18 +541,20 @@ export default function InspectionForm({
               ים ניהול ואחזקה – סיור ביקורת
             </h1>
             <p className="mt-2 text-[#EC8305]">מצוינות במבחן היומיומי</p>
-            {/* /* Logout Button */}
-            <div className="">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={logout}
-                className="text-white hover:text-[#EC8305] flex items-center gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                התנתק
-              </Button>
-            </div>
+            {/* Logout Button */}
+            {!isPrinting && (
+              <div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={logout}
+                  className="text-white hover:text-[#EC8305] flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  התנתק
+                </Button>
+              </div>
+            )}
           </div>
           {/* פרטי המנהל והבניין - Flexbox Layout */}
           <div className="mb-4 mt-4 flex flex-col md:flex-row gap-4">
