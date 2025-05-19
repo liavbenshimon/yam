@@ -28,6 +28,62 @@ import html2canvas from "html2canvas";
 import "../fonts/NotoSansHebrew";
 import { twMerge } from "tailwind-merge";
 
+// Define the interface for tracking textarea replacements
+interface TextAreaReplacement {
+  original: HTMLTextAreaElement;
+  replacement: HTMLDivElement;
+  parent: HTMLElement;
+}
+
+// Helper function to replace textareas with divs
+function replaceTextareasWithDivs(
+  container: HTMLElement | null
+): TextAreaReplacement[] {
+  if (!container) return [];
+  const textareas = Array.from(container.querySelectorAll("textarea"));
+  const replacements: TextAreaReplacement[] = [];
+
+  for (const textarea of textareas) {
+    const div = document.createElement("div");
+    div.textContent = textarea.value;
+    div.className = textarea.className; // Copy all classes
+
+    // Apply specific styles to make the div mimic textarea content rendering
+    const computedTextareaStyle = getComputedStyle(textarea);
+    div.style.whiteSpace = "pre-wrap"; // Preserve line breaks and spacing
+    div.style.wordWrap = "break-word"; // Wrap long words
+    div.style.fontFamily = computedTextareaStyle.fontFamily;
+    div.style.fontSize = computedTextareaStyle.fontSize;
+    div.style.fontWeight = computedTextareaStyle.fontWeight;
+    div.style.lineHeight = computedTextareaStyle.lineHeight;
+    div.style.padding = computedTextareaStyle.padding;
+    div.style.margin = computedTextareaStyle.margin;
+    div.style.border = computedTextareaStyle.border;
+
+    // Ensure height and overflow are respected from classes (like h-auto, overflow-visible)
+    // If 'h-auto' is part of className, div should behave correctly.
+    // Explicitly setting div.style.height = 'auto' can reinforce this.
+    // div.style.height = 'auto'; // Usually covered by 'h-auto' class
+    // div.style.overflow = 'visible'; // Usually covered by 'overflow-visible' class
+
+    const parent = textarea.parentNode as HTMLElement;
+    if (parent) {
+      parent.replaceChild(div, textarea);
+      replacements.push({ original: textarea, replacement: div, parent });
+    }
+  }
+  return replacements;
+}
+
+// Helper function to restore original textareas
+function restoreTextareas(replacements: TextAreaReplacement[]) {
+  for (const { original, replacement, parent } of replacements) {
+    if (parent && parent.contains(replacement)) {
+      parent.replaceChild(original, replacement);
+    }
+  }
+}
+
 // First checklist items
 const initialGeneralItems: CheckItem[] = [
   {
@@ -265,15 +321,24 @@ export default function InspectionForm({
     });
 
     // שמירת הסגנונות המקוריים של הרפרנסים
-    const originalStyles = {
-      form: saveOriginalStyles(formRef.current),
-      systems: saveOriginalStyles(systemsRef.current),
-      general: saveOriginalStyles(generalRef.current),
-    };
+    const originalFormStyles = formRef.current
+      ? saveOriginalStyles(formRef.current)
+      : {};
+    const originalSystemsStyles = systemsRef.current
+      ? saveOriginalStyles(systemsRef.current)
+      : {};
+    const originalGeneralStyles = generalRef.current
+      ? saveOriginalStyles(generalRef.current)
+      : {};
+
+    let formTextareaReplacements: TextAreaReplacement[] = [];
+    let systemsTextareaReplacements: TextAreaReplacement[] = [];
+    let generalTextareaReplacements: TextAreaReplacement[] = [];
 
     try {
       // טיפול בדף ראשון
       if (formRef.current) {
+        formTextareaReplacements = replaceTextareasWithDivs(formRef.current);
         applyFixedStyles(formRef.current);
 
         const canvas = await html2canvas(formRef.current, {
@@ -287,8 +352,7 @@ export default function InspectionForm({
           logging: false,
         });
 
-        restoreOriginalStyles(formRef.current, originalStyles.form);
-
+        // No restore here, will be done in finally
         const margin = 10;
         const imgWidth = 210 - margin * 2;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -305,6 +369,9 @@ export default function InspectionForm({
       // טיפול בדף שני
       doc.addPage();
       if (systemsRef.current) {
+        systemsTextareaReplacements = replaceTextareasWithDivs(
+          systemsRef.current
+        );
         applyFixedStyles(systemsRef.current);
 
         const canvas = await html2canvas(systemsRef.current, {
@@ -318,8 +385,7 @@ export default function InspectionForm({
           logging: false,
         });
 
-        restoreOriginalStyles(systemsRef.current, originalStyles.systems);
-
+        // No restore here, will be done in finally
         const margin = 10;
         const imgWidth = 210 - margin * 2;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -336,6 +402,9 @@ export default function InspectionForm({
       // טיפול בדף שלישי
       doc.addPage();
       if (generalRef.current) {
+        generalTextareaReplacements = replaceTextareasWithDivs(
+          generalRef.current
+        );
         applyFixedStyles(generalRef.current);
 
         const canvas = await html2canvas(generalRef.current, {
@@ -349,8 +418,7 @@ export default function InspectionForm({
           logging: false,
         });
 
-        restoreOriginalStyles(generalRef.current, originalStyles.general);
-
+        // No restore here, will be done in finally
         const margin = 10;
         const imgWidth = 210 - margin * 2;
 
@@ -407,6 +475,25 @@ export default function InspectionForm({
         }`
       );
     } finally {
+      // Restore container styles and textareas for all sections
+      if (formRef.current) {
+        restoreOriginalStyles(formRef.current, originalFormStyles);
+        if (formTextareaReplacements.length > 0) {
+          restoreTextareas(formTextareaReplacements);
+        }
+      }
+      if (systemsRef.current) {
+        restoreOriginalStyles(systemsRef.current, originalSystemsStyles);
+        if (systemsTextareaReplacements.length > 0) {
+          restoreTextareas(systemsTextareaReplacements);
+        }
+      }
+      if (generalRef.current) {
+        restoreOriginalStyles(generalRef.current, originalGeneralStyles);
+        if (generalTextareaReplacements.length > 0) {
+          restoreTextareas(generalTextareaReplacements);
+        }
+      }
       setIsPrinting(false);
     }
   };
