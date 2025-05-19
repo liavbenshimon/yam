@@ -432,7 +432,7 @@ export default function InspectionForm({
     element.style.width = "794px";
     element.style.maxWidth = "none";
     element.style.position = "absolute";
-    element.style.transform = "scale(1)";
+    element.style.transform = "scale(2)";
     element.style.overflow = "visible";
   }
 
