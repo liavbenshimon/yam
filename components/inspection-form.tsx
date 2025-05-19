@@ -353,15 +353,46 @@ export default function InspectionForm({
 
         const margin = 10;
         const imgWidth = 210 - margin * 2;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        doc.addImage(
-          canvas.toDataURL("image/png"),
-          "PNG",
-          margin,
-          margin,
-          imgWidth,
-          imgHeight
-        );
+
+        // Split the image into two equal height parts
+        const splitCount = 2;
+        const partHeight = Math.floor(canvas.height / splitCount);
+
+        for (let i = 0; i < splitCount; i++) {
+          // Create a new canvas for each part
+          const partCanvas = document.createElement("canvas");
+          partCanvas.width = canvas.width;
+          // The last part takes the remaining height (in case of non-even split)
+          partCanvas.height =
+            i === splitCount - 1 ? canvas.height - partHeight * i : partHeight;
+          const ctx = partCanvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(
+              canvas,
+              0,
+              i * partHeight,
+              canvas.width,
+              partCanvas.height,
+              0,
+              0,
+              canvas.width,
+              partCanvas.height
+            );
+          }
+
+          // Add a new page (except for the first one)
+          if (i > 0) doc.addPage();
+
+          const imgHeight = (partCanvas.height * imgWidth) / partCanvas.width;
+          doc.addImage(
+            partCanvas.toDataURL("image/png"),
+            "PNG",
+            margin,
+            margin,
+            imgWidth,
+            imgHeight
+          );
+        }
       }
 
       const filename = `inspection_${new Date()
@@ -371,8 +402,8 @@ export default function InspectionForm({
     } catch (error) {
       console.error("Error generating PDF:", error);
       setErrorMessage(
-        `אירעה שגיאה ביצירת ה-PDF: ${
-          error instanceof Error ? error.message : "שגיאה לא ידועה"
+        `An error occurred while creating the PDF: ${
+          error instanceof Error ? error.message : "Unknown error"
         }`
       );
     } finally {
@@ -380,7 +411,7 @@ export default function InspectionForm({
     }
   };
 
-  // פונקציית עזר לשמירת סגנונות מקוריים
+  // Helper function to save original styles
   function saveOriginalStyles(element: HTMLElement | null) {
     if (!element) return {};
 
@@ -394,7 +425,7 @@ export default function InspectionForm({
     };
   }
 
-  // פונקציית עזר לקביעת סגנונות קבועים לפני הלכידה
+  // Helper function to apply fixed styles before capture
   function applyFixedStyles(element: HTMLElement) {
     if (!element) return;
 
@@ -405,7 +436,7 @@ export default function InspectionForm({
     element.style.overflow = "visible";
   }
 
-  // פונקציית עזר לשחזור הסגנונות המקוריים
+  // Helper function to restore original styles
   function restoreOriginalStyles(
     element: HTMLElement,
     originalStyles: Partial<CSSStyleDeclaration>
@@ -420,7 +451,7 @@ export default function InspectionForm({
     element.style.overflow = originalStyles.overflow || "";
   }
 
-  // פונקציית ה-submit נשארת כמעט זהה
+  // The submit function remains almost the same
   const handleSubmit = async (values: any) => {
     setErrorMessage(null);
 
