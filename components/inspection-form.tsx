@@ -197,7 +197,7 @@ export default function InspectionForm({
       topic: "גנרטור – הנעה חודשית + מצב סולר",
       isOk: null,
       isNotOk: null,
-      comments: "טיפול מונע בסוף כל שנה",
+      comments: "טיפול מונע בסוף כל שנה, בדיקה אחת לשנה על ידי טכנאי מוסמך",
     },
     {
       id: "waterPumps",
@@ -211,21 +211,21 @@ export default function InspectionForm({
       topic: "מערכת גילוי אש- בדק ויזואלי לתקלות",
       isOk: null,
       isNotOk: null,
-      comments: "",
+      comments: "בדיקה אחת לשנה על ידי טכנאי מוסמך",
     },
     {
       id: "sprinklers",
       topic: "ספרינקלרים – בדק ויזואלי לאיתור נזילות",
       isOk: null,
       isNotOk: null,
-      comments: "",
+      comments: "בדיקה אחת לשנה על ידי טכנאי מוסמך",
     },
     {
       id: "fans",
       topic: "מפוחים – הפעלה חודשית",
       isOk: null,
       isNotOk: null,
-      comments: "",
+      comments: "בדיקה אחת לשנה על ידי טכנאי מוסמך",
     },
     {
       id: "submersiblePumps",
@@ -302,7 +302,6 @@ export default function InspectionForm({
     setIsPrinting(true);
     await new Promise((res) => setTimeout(res, 300)); // המתנה קצרה לרינדור מחדש
 
-    // יצירת ה-PDF עם הגדרות קבועות
     const doc = new jsPDF({
       orientation: "p",
       unit: "mm",
@@ -322,26 +321,23 @@ export default function InspectionForm({
     try {
       // טיפול בדף ראשון
       if (formRef.current) {
-        // קביעת סגנונות קבועים לפני הלכידה
         applyFixedStyles(formRef.current);
 
         const canvas = await html2canvas(formRef.current, {
-          scale: Math.min(window.devicePixelRatio, 2), // התאמה לרזולוציית המכשיר
+          scale: Math.min(window.devicePixelRatio, 2),
           useCORS: true,
           allowTaint: true,
           scrollX: 0,
           scrollY: 0,
-          windowWidth: 794, // רוחב קבוע בפיקסלים (A4)
+          windowWidth: 794,
           windowHeight: 1123,
           logging: false,
         });
 
-        // שחזור הסגנונות המקוריים
         restoreOriginalStyles(formRef.current, originalStyles.form);
 
-        // מיקום והכנסה לPDF
         const margin = 10;
-        const imgWidth = 210 - margin * 2; // רוחב הדף פחות שוליים
+        const imgWidth = 210 - margin * 2;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         doc.addImage(
           canvas.toDataURL("image/png"),
@@ -415,7 +411,6 @@ export default function InspectionForm({
         );
       }
 
-      // שמירת ה-PDF
       const filename = `inspection_${new Date()
         .toISOString()
         .slice(0, 10)}.pdf`;
@@ -433,7 +428,7 @@ export default function InspectionForm({
   };
 
   // פונקציית עזר לשמירת סגנונות מקוריים
-  function saveOriginalStyles(element) {
+  function saveOriginalStyles(element: HTMLElement | null) {
     if (!element) return {};
 
     return {
@@ -447,27 +442,29 @@ export default function InspectionForm({
   }
 
   // פונקציית עזר לקביעת סגנונות קבועים לפני הלכידה
-  function applyFixedStyles(element) {
+  function applyFixedStyles(element: HTMLElement) {
     if (!element) return;
 
-    // הגדרת רוחב קבוע שישמר על פרופורציה זהה בכל המכשירים
-    element.style.width = "794px"; // רוחב של דף A4 בפיקסלים
+    element.style.width = "794px";
     element.style.maxWidth = "none";
     element.style.position = "absolute";
     element.style.transform = "scale(1)";
-    element.style.overflow = "hidden";
+    element.style.overflow = "visible";
   }
 
   // פונקציית עזר לשחזור הסגנונות המקוריים
-  function restoreOriginalStyles(element, originalStyles) {
+  function restoreOriginalStyles(
+    element: HTMLElement,
+    originalStyles: Partial<CSSStyleDeclaration>
+  ) {
     if (!element || !originalStyles) return;
 
-    element.style.width = originalStyles.width;
-    element.style.height = originalStyles.height;
-    element.style.maxWidth = originalStyles.maxWidth;
-    element.style.position = originalStyles.position;
-    element.style.transform = originalStyles.transform;
-    element.style.overflow = originalStyles.overflow;
+    element.style.width = originalStyles.width || "";
+    element.style.height = originalStyles.height || "";
+    element.style.maxWidth = originalStyles.maxWidth || "";
+    element.style.position = originalStyles.position || "";
+    element.style.transform = originalStyles.transform || "";
+    element.style.overflow = originalStyles.overflow || "";
   }
 
   // פונקציית ה-submit נשארת כמעט זהה
@@ -707,7 +704,7 @@ export default function InspectionForm({
                     onChange={(e) =>
                       handleGeneralItemChange(index, "comments", e.target.value)
                     }
-                    className="w-full min-h-[40px] text-right"
+                    className="w-full text-right resize-none overflow-visible h-auto"
                   />
                 </div>
               </div>
@@ -730,7 +727,7 @@ export default function InspectionForm({
                     general: e.target.value,
                   })
                 }
-                className="w-full min-h-[80px] text-right"
+                className="w-full text-right resize-none overflow-visible h-auto"
                 placeholder="הערות נוספות של מנהל האחזקה..."
               />
             </div>
@@ -813,7 +810,7 @@ export default function InspectionForm({
                     onChange={(e) =>
                       handleSystemItemChange(index, "comments", e.target.value)
                     }
-                    className="w-full min-h-[40px] text-right"
+                    className="w-full text-right resize-none overflow-visible h-auto"
                   />
                 </div>
               </div>
@@ -836,7 +833,7 @@ export default function InspectionForm({
                     systems: e.target.value,
                   })
                 }
-                className="w-full min-h-[80px] text-right"
+                className="w-full text-right resize-none overflow-visible h-auto"
                 placeholder="הערות נוספות של מנהל האחזקה..."
               />
             </div>
