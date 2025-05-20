@@ -258,6 +258,7 @@ export default function InspectionForm({
       floatPrecision: 16,
     });
 
+    doc.setR2L(true);
     doc.setFont("NotoSansHebrew");
 
     const addText = (text: string, x: number, y: number, options?: any) => {
@@ -265,7 +266,7 @@ export default function InspectionForm({
     };
 
     const lineHeight = 7;
-    const margin = 10;
+    const margin = 14;
     let currentY = margin;
 
     try {
@@ -287,11 +288,6 @@ export default function InspectionForm({
     doc.setTextColor(0, 0, 0); // Reset color
     currentY += lineHeight * 2;
 
-    // Manager Details
-    addText("פרטי המנהל:", 210 - margin, currentY, {
-      fontSize: 14,
-      fontStyle: "bold",
-    });
     currentY += lineHeight;
     addText(`שם המנהל: ${managerName}`, 210 - margin, currentY);
     currentY += lineHeight * 1.5;
@@ -329,19 +325,35 @@ export default function InspectionForm({
       const head = [
         {
           content: "הערות",
-          styles: { halign: "right" as const, font: "NotoSansHebrew" },
+          styles: {
+            halign: "right" as const,
+            font: "NotoSansHebrew",
+            fontStyle: "normal",
+          },
         },
         {
           content: "לא תקין",
-          styles: { halign: "center" as const, font: "NotoSansHebrew" },
+          styles: {
+            halign: "center" as const,
+            font: "NotoSansHebrew",
+            fontStyle: "normal",
+          },
         },
         {
           content: "תקין",
-          styles: { halign: "center" as const, font: "NotoSansHebrew" },
+          styles: {
+            halign: "center" as const,
+            font: "NotoSansHebrew",
+            fontStyle: "normal",
+          },
         },
         {
           content: "נושא",
-          styles: { halign: "right" as const, font: "NotoSansHebrew" },
+          styles: {
+            halign: "right" as const,
+            font: "NotoSansHebrew",
+            fontStyle: "normal",
+          },
         },
       ];
 
@@ -415,10 +427,9 @@ export default function InspectionForm({
 
     // Systems Inspection Section
     // Add a page break if there's not enough space for the next table header + some rows
-    if (currentY > 240) {
-      doc.addPage();
-      currentY = margin;
-    }
+
+    currentY = margin;
+    doc.addPage();
     addChecklistTable(
       "בדיקת מערכות",
       formValues.systemItems,
@@ -426,6 +437,7 @@ export default function InspectionForm({
     );
 
     const filename = `inspection_${new Date().toISOString().slice(0, 10)}.pdf`;
+
     doc.save(filename);
 
     setIsPrinting(false);
