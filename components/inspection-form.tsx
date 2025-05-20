@@ -29,6 +29,37 @@ import "../fonts/NotoSansHebrew";
 import { twMerge } from "tailwind-merge";
 import { toast } from "sonner";
 
+const head = [
+  {
+    content: "הערות",
+    styles: {
+      halign: "right" as const,
+      font: "NotoSansHebrew",
+    },
+  },
+  {
+    content: "לא תקין",
+    styles: {
+      halign: "center" as const,
+      font: "NotoSansHebrew",
+    },
+  },
+  {
+    content: "תקין",
+    styles: {
+      halign: "center" as const,
+      font: "NotoSansHebrew",
+    },
+  },
+  {
+    content: "נושא",
+    styles: {
+      halign: "right" as const,
+      font: "NotoSansHebrew",
+    },
+  },
+];
+
 // First checklist items
 const initialGeneralItems: CheckItem[] = [
   {
@@ -279,15 +310,9 @@ export default function InspectionForm({
     doc.setTextColor(0, 0, 0); // Reset color
     currentY += lineHeight * 2;
 
+    // Building and Date Details
     currentY += lineHeight;
     addText(`שם המנהל: ${managerName}`, 210 - margin, currentY);
-    currentY += lineHeight * 1.5;
-
-    // Building and Date Details
-    addText("פרטי הבניין ותאריך:", 210 - margin, currentY, {
-      fontSize: 14,
-      fontStyle: "bold",
-    });
     currentY += lineHeight;
     addText(`שם הלקוח: ${formValues.selectedClient}`, 210 - margin, currentY);
     currentY += lineHeight;
@@ -312,37 +337,6 @@ export default function InspectionForm({
       doc.setFontSize(16);
       addText(title, 210 - margin, currentY);
       currentY += lineHeight * 1.5;
-
-      const head = [
-        {
-          content: "הערות",
-          styles: {
-            halign: "right" as const,
-            font: "NotoSansHebrew",
-          },
-        },
-        {
-          content: "לא תקין",
-          styles: {
-            halign: "center" as const,
-            font: "NotoSansHebrew",
-          },
-        },
-        {
-          content: "תקין",
-          styles: {
-            halign: "center" as const,
-            font: "NotoSansHebrew",
-          },
-        },
-        {
-          content: "נושא",
-          styles: {
-            halign: "right" as const,
-            font: "NotoSansHebrew",
-          },
-        },
-      ];
 
       const body = items.map((item) => [
         {
