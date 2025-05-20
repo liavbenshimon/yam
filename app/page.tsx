@@ -1,11 +1,12 @@
-"use client"
+"use client";
 
-import { useRequireAuth } from "@/lib/auth"
-import InspectionForm from "@/components/inspection-form"
-import { Loader2 } from "lucide-react"
+import { useRequireAuth } from "@/lib/auth";
+import InspectionForm from "@/components/inspection-form";
+import { Toaster } from "sonner";
+import { Loader2 } from "lucide-react";
 
 export default function Home() {
-  const { manager, isLoading } = useRequireAuth()
+  const { manager, isLoading } = useRequireAuth();
 
   if (isLoading) {
     return (
@@ -15,16 +16,17 @@ export default function Home() {
           <p className="text-lg">טוען...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!manager) {
-    return null // useRequireAuth ינווט אוטומטית לדף ההתחברות
+    return null; // useRequireAuth ינווט אוטומטית לדף ההתחברות
   }
 
   return (
     <main className="min-h-screen p-2 md:p-8 bg-[#DBD3D3]/20">
       <InspectionForm managerId={manager.id} managerName={manager.name} />
+      <Toaster />
     </main>
-  )
+  );
 }

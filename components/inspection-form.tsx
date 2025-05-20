@@ -27,6 +27,7 @@ import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
 import "../fonts/NotoSansHebrew";
 import { twMerge } from "tailwind-merge";
+import { toast } from "sonner";
 
 // First checklist items
 const initialGeneralItems: CheckItem[] = [
@@ -431,6 +432,12 @@ export default function InspectionForm({
     const filename = `inspection_${new Date().toISOString().slice(0, 10)}.pdf`;
 
     doc.save(filename);
+
+    toast.success("הטופס נשמר בהצלחה", {
+      duration: 3000,
+      position: "top-center",
+      richColors: true,
+    });
 
     setIsPrinting(false);
   };
