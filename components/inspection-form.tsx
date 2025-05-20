@@ -24,65 +24,9 @@ import {
 import { getManagerById } from "@/lib/managers-data";
 import { useAuth } from "@/lib/auth";
 import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
+import { autoTable } from "jspdf-autotable";
 import "../fonts/NotoSansHebrew";
 import { twMerge } from "tailwind-merge";
-
-// Define the interface for tracking textarea replacements
-interface TextAreaReplacement {
-  original: HTMLTextAreaElement;
-  replacement: HTMLDivElement;
-  parent: HTMLElement;
-}
-
-// Helper function to replace textareas with divs
-function replaceTextareasWithDivs(
-  container: HTMLElement | null
-): TextAreaReplacement[] {
-  if (!container) return [];
-  const textareas = Array.from(container.querySelectorAll("textarea"));
-  const replacements: TextAreaReplacement[] = [];
-
-  for (const textarea of textareas) {
-    const div = document.createElement("div");
-    div.textContent = textarea.value;
-    div.className = textarea.className; // Copy all classes
-
-    // Apply specific styles to make the div mimic textarea content rendering
-    const computedTextareaStyle = getComputedStyle(textarea);
-    div.style.whiteSpace = "pre-wrap"; // Preserve line breaks and spacing
-    div.style.wordWrap = "break-word"; // Wrap long words
-    div.style.fontFamily = computedTextareaStyle.fontFamily;
-    div.style.fontSize = computedTextareaStyle.fontSize;
-    div.style.fontWeight = computedTextareaStyle.fontWeight;
-    div.style.lineHeight = computedTextareaStyle.lineHeight;
-    div.style.padding = computedTextareaStyle.padding;
-    div.style.margin = computedTextareaStyle.margin;
-    div.style.border = computedTextareaStyle.border;
-
-    // Ensure height and overflow are respected from classes (like h-auto, overflow-visible)
-    // If 'h-auto' is part of className, div should behave correctly.
-    // Explicitly setting div.style.height = 'auto' can reinforce this.
-    // div.style.height = 'auto'; // Usually covered by 'h-auto' class
-    // div.style.overflow = 'visible'; // Usually covered by 'overflow-visible' class
-
-    const parent = textarea.parentNode as HTMLElement;
-    if (parent) {
-      parent.replaceChild(div, textarea);
-      replacements.push({ original: textarea, replacement: div, parent });
-    }
-  }
-  return replacements;
-}
-
-// Helper function to restore original textareas
-function restoreTextareas(replacements: TextAreaReplacement[]) {
-  for (const { original, replacement, parent } of replacements) {
-    if (parent && parent.contains(replacement)) {
-      parent.replaceChild(original, replacement);
-    }
-  }
-}
 
 // First checklist items
 const initialGeneralItems: CheckItem[] = [
@@ -281,18 +225,6 @@ export default function InspectionForm({
   const [availableClients, setAvailableClients] = useState<string[]>([]);
   const [submissionTime, setSubmissionTime] = useState<string>("");
 
-  const formRef = useRef<HTMLDivElement | null>(null);
-  const systemsRef = useRef<HTMLDivElement | null>(null);
-  const generalRef = useRef<HTMLDivElement | null>(null);
-
-  // Loading the current manager's clients
-  useEffect(() => {
-    const manager = getManagerById(managerId);
-    if (manager) {
-      setAvailableClients(manager.clients);
-    }
-  }, [managerId]);
-
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
 
@@ -306,10 +238,16 @@ export default function InspectionForm({
     });
   };
 
-  // Function to generate the PDF
+  // Loading the current manager's clients
+  useEffect(() => {
+    const manager = getManagerById(managerId);
+    if (manager) {
+      setAvailableClients(manager.clients);
+    }
+  }, [managerId]);
+
   const generatePDF = async (formValues: any) => {
     setIsPrinting(true);
-    await new Promise((res) => setTimeout(res, 300)); // המתנה קצרה לרינדור מחדש
 
     const doc = new jsPDF({
       orientation: "p",
@@ -320,223 +258,178 @@ export default function InspectionForm({
       floatPrecision: 16,
     });
 
-    // שמירת הסגנונות המקוריים של הרפרנסים
-    const originalFormStyles = formRef.current
-      ? saveOriginalStyles(formRef.current)
-      : {};
-    const originalSystemsStyles = systemsRef.current
-      ? saveOriginalStyles(systemsRef.current)
-      : {};
-    const originalGeneralStyles = generalRef.current
-      ? saveOriginalStyles(generalRef.current)
-      : {};
+    doc.setFont("NotoSansHebrew");
 
-    let formTextareaReplacements: TextAreaReplacement[] = [];
-    let systemsTextareaReplacements: TextAreaReplacement[] = [];
-    let generalTextareaReplacements: TextAreaReplacement[] = [];
+    const addText = (text: string, x: number, y: number, options?: any) => {
+      doc.text(text, x, y, { lang: "he", align: "right", ...options });
+    };
+
+    const lineHeight = 7;
+    const margin = 10;
+    let currentY = margin;
 
     try {
-      // טיפול בדף ראשון
-      if (formRef.current) {
-        formTextareaReplacements = replaceTextareasWithDivs(formRef.current);
-        applyFixedStyles(formRef.current);
-
-        const canvas = await html2canvas(formRef.current, {
-          scale: Math.min(window.devicePixelRatio, 2),
-          useCORS: true,
-          allowTaint: true,
-          scrollX: 0,
-          scrollY: 0,
-          windowWidth: 794,
-          windowHeight: 1123,
-          logging: false,
-        });
-
-        // No restore here, will be done in finally
-        const margin = 10;
-        const imgWidth = 210 - margin * 2;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        doc.addImage(
-          canvas.toDataURL("image/png"),
-          "PNG",
-          margin,
-          margin,
-          imgWidth,
-          imgHeight
-        );
-      }
-
-      // טיפול בדף שני
-      doc.addPage();
-      if (systemsRef.current) {
-        systemsTextareaReplacements = replaceTextareasWithDivs(
-          systemsRef.current
-        );
-        applyFixedStyles(systemsRef.current);
-
-        const canvas = await html2canvas(systemsRef.current, {
-          scale: Math.min(window.devicePixelRatio, 2),
-          useCORS: true,
-          allowTaint: true,
-          scrollX: 0,
-          scrollY: 0,
-          windowWidth: 794,
-          windowHeight: 1123,
-          logging: false,
-        });
-
-        // No restore here, will be done in finally
-        const margin = 10;
-        const imgWidth = 210 - margin * 2;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        doc.addImage(
-          canvas.toDataURL("image/png"),
-          "PNG",
-          margin,
-          margin,
-          imgWidth,
-          imgHeight
-        );
-      }
-
-      // טיפול בדף שלישי
-      doc.addPage();
-      if (generalRef.current) {
-        generalTextareaReplacements = replaceTextareasWithDivs(
-          generalRef.current
-        );
-        applyFixedStyles(generalRef.current);
-
-        const canvas = await html2canvas(generalRef.current, {
-          scale: Math.min(window.devicePixelRatio, 2),
-          useCORS: true,
-          allowTaint: true,
-          scrollX: 0,
-          scrollY: 0,
-          windowWidth: 794,
-          windowHeight: 1123,
-          logging: false,
-        });
-
-        // No restore here, will be done in finally
-        const margin = 10;
-        const imgWidth = 210 - margin * 2;
-
-        // Split the image into two equal height parts
-        const splitCount = 2;
-        const partHeight = Math.floor(canvas.height / splitCount);
-
-        for (let i = 0; i < splitCount; i++) {
-          // Create a new canvas for each part
-          const partCanvas = document.createElement("canvas");
-          partCanvas.width = canvas.width;
-          // The last part takes the remaining height (in case of non-even split)
-          partCanvas.height =
-            i === splitCount - 1 ? canvas.height - partHeight * i : partHeight;
-          const ctx = partCanvas.getContext("2d");
-          if (ctx) {
-            ctx.drawImage(
-              canvas,
-              0,
-              i * partHeight,
-              canvas.width,
-              partCanvas.height,
-              0,
-              0,
-              canvas.width,
-              partCanvas.height
-            );
-          }
-
-          // Add a new page (except for the first one)
-          if (i > 0) doc.addPage();
-
-          const imgHeight = (partCanvas.height * imgWidth) / partCanvas.width;
-          doc.addImage(
-            partCanvas.toDataURL("image/png"),
-            "PNG",
-            margin,
-            margin,
-            imgWidth,
-            imgHeight
-          );
-        }
-      }
-
-      const filename = `inspection_${new Date()
-        .toISOString()
-        .slice(0, 10)}.pdf`;
-      doc.save(filename);
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      setErrorMessage(
-        `An error occurred while creating the PDF: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
+      const imgData = "/yamlogo.jpg"; // Path to your logo
+      doc.addImage(imgData, "JPEG", margin, currentY, 40, 40);
+    } catch (e) {
+      console.warn(
+        "Logo could not be added. Ensure it's accessible and in a supported format.",
+        e
       );
-    } finally {
-      // Restore container styles and textareas for all sections
-      if (formRef.current) {
-        restoreOriginalStyles(formRef.current, originalFormStyles);
-        if (formTextareaReplacements.length > 0) {
-          restoreTextareas(formTextareaReplacements);
-        }
-      }
-      if (systemsRef.current) {
-        restoreOriginalStyles(systemsRef.current, originalSystemsStyles);
-        if (systemsTextareaReplacements.length > 0) {
-          restoreTextareas(systemsTextareaReplacements);
-        }
-      }
-      if (generalRef.current) {
-        restoreOriginalStyles(generalRef.current, originalGeneralStyles);
-        if (generalTextareaReplacements.length > 0) {
-          restoreTextareas(generalTextareaReplacements);
-        }
-      }
-      setIsPrinting(false);
     }
-  };
 
-  // Helper function to save original styles
-  function saveOriginalStyles(element: HTMLElement | null) {
-    if (!element) return {};
+    doc.setFontSize(18);
+    addText("ים ניהול ואחזקה – סיור ביקורת", 210 - margin, currentY);
+    currentY += lineHeight;
+    doc.setFontSize(12);
+    doc.setTextColor(236, 131, 5); // #EC8305
+    addText("מצוינות במבחן היומיומי", 210 - margin, currentY);
+    doc.setTextColor(0, 0, 0); // Reset color
+    currentY += lineHeight * 2;
 
-    return {
-      width: element.style.width,
-      height: element.style.height,
-      maxWidth: element.style.maxWidth,
-      position: element.style.position,
-      transform: element.style.transform,
-      overflow: element.style.overflow,
+    // Manager Details
+    addText("פרטי המנהל:", 210 - margin, currentY, {
+      fontSize: 14,
+      fontStyle: "bold",
+    });
+    currentY += lineHeight;
+    addText(`שם המנהל: ${managerName}`, 210 - margin, currentY);
+    currentY += lineHeight * 1.5;
+
+    // Building and Date Details
+    addText("פרטי הבניין ותאריך:", 210 - margin, currentY, {
+      fontSize: 14,
+      fontStyle: "bold",
+    });
+    currentY += lineHeight;
+    addText(`שם הלקוח: ${formValues.selectedClient}`, 210 - margin, currentY);
+    currentY += lineHeight;
+    addText(
+      `תאריך: ${formatDateForDisplay(formValues.date)}`,
+      210 - margin,
+      currentY
+    );
+    currentY += lineHeight * 2;
+
+    // Function to add a table for checklist items
+    const addChecklistTable = (
+      title: string,
+      items: CheckItem[],
+      notes: string
+    ) => {
+      if (currentY > 260) {
+        // Check if new page is needed
+        doc.addPage();
+        currentY = margin;
+      }
+      doc.setFontSize(16);
+      addText(title, 210 - margin, currentY);
+      currentY += lineHeight * 1.5;
+
+      const head = [
+        {
+          content: "הערות",
+          styles: { halign: "right" as const, font: "NotoSansHebrew" },
+        },
+        {
+          content: "לא תקין",
+          styles: { halign: "center" as const, font: "NotoSansHebrew" },
+        },
+        {
+          content: "תקין",
+          styles: { halign: "center" as const, font: "NotoSansHebrew" },
+        },
+        {
+          content: "נושא",
+          styles: { halign: "right" as const, font: "NotoSansHebrew" },
+        },
+      ];
+
+      const body = items.map((item) => [
+        {
+          content: item.comments,
+          styles: { halign: "right" as const, font: "NotoSansHebrew" },
+        },
+        {
+          content: item.isNotOk ? "X" : "",
+          styles: { halign: "center" as const, font: "NotoSansHebrew" },
+        },
+        {
+          content: item.isOk ? "X" : "",
+          styles: { halign: "center" as const, font: "NotoSansHebrew" },
+        },
+        {
+          content: item.topic,
+          styles: { halign: "right" as const, font: "NotoSansHebrew" },
+        },
+      ]);
+
+      autoTable(doc, {
+        startY: currentY,
+        head: [head],
+        body: body,
+        theme: "grid",
+        headStyles: {
+          fillColor: [2, 76, 170],
+          textColor: 255,
+          font: "NotoSansHebrew",
+          halign: "right" as const,
+        }, // #024CAA
+        bodyStyles: { font: "NotoSansHebrew", halign: "right" as const },
+        columnStyles: {
+          0: { cellWidth: 80 }, // Comments
+          1: { cellWidth: 20 }, // Not Ok
+          2: { cellWidth: 20 }, // Ok
+          3: { cellWidth: "auto" }, // Topic
+        },
+        didDrawPage: (data: any) => {
+          currentY = data.cursor.y + margin / 2;
+        },
+        margin: { right: margin, left: margin },
+      });
+      currentY = (doc as any).lastAutoTable.finalY + lineHeight;
+
+      if (notes) {
+        if (currentY > 270) {
+          doc.addPage();
+          currentY = margin;
+        }
+        addText("הערות מנהל אחזקה:", 210 - margin, currentY, {
+          fontSize: 12,
+          fontStyle: "bold",
+        });
+        currentY += lineHeight;
+        // Use splitTextToSize for multi-line text
+        const notesLines = doc.splitTextToSize(notes, 210 - margin * 2);
+        addText(notesLines.join("\n"), 210 - margin, currentY);
+        currentY += notesLines.length * lineHeight + lineHeight;
+      }
     };
-  }
 
-  // Helper function to apply fixed styles before capture
-  function applyFixedStyles(element: HTMLElement) {
-    if (!element) return;
+    // General Inspection Section
+    addChecklistTable(
+      "בדיקה כללית",
+      formValues.generalItems,
+      formValues.managerNotes.general
+    );
 
-    element.style.width = "794px";
-    element.style.maxWidth = "none";
-    element.style.position = "absolute";
-    element.style.transform = "scale(2)";
-    element.style.overflow = "visible";
-  }
+    // Systems Inspection Section
+    // Add a page break if there's not enough space for the next table header + some rows
+    if (currentY > 240) {
+      doc.addPage();
+      currentY = margin;
+    }
+    addChecklistTable(
+      "בדיקת מערכות",
+      formValues.systemItems,
+      formValues.managerNotes.systems
+    );
 
-  // Helper function to restore original styles
-  function restoreOriginalStyles(
-    element: HTMLElement,
-    originalStyles: Partial<CSSStyleDeclaration>
-  ) {
-    if (!element || !originalStyles) return;
+    const filename = `inspection_${new Date().toISOString().slice(0, 10)}.pdf`;
+    doc.save(filename);
 
-    element.style.width = originalStyles.width || "";
-    element.style.height = originalStyles.height || "";
-    element.style.maxWidth = originalStyles.maxWidth || "";
-    element.style.position = originalStyles.position || "";
-    element.style.transform = originalStyles.transform || "";
-    element.style.overflow = originalStyles.overflow || "";
-  }
+    setIsPrinting(false);
+  };
 
   // The submit function remains almost the same
   const handleSubmit = async (values: any) => {
@@ -601,7 +494,7 @@ export default function InspectionForm({
           dir="rtl"
         >
           <Form className="p-4 md:p-6">
-            <div className="rounded-lg overflow-hidden" ref={formRef}>
+            <div className="rounded-lg overflow-hidden">
               {/* Header */}
               <div className="bg-[#091057] text-white p-4 md:p-6 text-center">
                 <div className="flex justify-center mb-4">
@@ -716,7 +609,7 @@ export default function InspectionForm({
             </div>
 
             {/* General Inspection Section - Flexbox Layout */}
-            <div ref={generalRef} id="general-section" className="mb-8">
+            <div id="general-section" className="mb-8">
               <h2 className="text-xl font-bold mb-4 text-[#091057]">
                 בדיקה כללית
               </h2>
@@ -828,7 +721,7 @@ export default function InspectionForm({
             </div>
 
             {/* Systems Inspection Section - Flexbox Layout */}
-            <div ref={systemsRef} id="systems-section" className="mb-8">
+            <div id="systems-section" className="mb-8">
               <h2 className="text-xl font-bold mb-4 text-[#091057]">
                 בדיקת מערכות
               </h2>
