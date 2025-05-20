@@ -2,8 +2,8 @@
 
 import type React from "react";
 
-import { useState, useEffect, useRef } from "react";
-import { Formik, Form, Field, ErrorMessage, useFormikContext } from "formik";
+import { useState, useEffect } from "react";
+import { Formik, Form, Field } from "formik";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -328,7 +328,6 @@ export default function InspectionForm({
           styles: {
             halign: "right" as const,
             font: "NotoSansHebrew",
-            fontStyle: "normal",
           },
         },
         {
@@ -336,7 +335,6 @@ export default function InspectionForm({
           styles: {
             halign: "center" as const,
             font: "NotoSansHebrew",
-            fontStyle: "normal",
           },
         },
         {
@@ -344,7 +342,6 @@ export default function InspectionForm({
           styles: {
             halign: "center" as const,
             font: "NotoSansHebrew",
-            fontStyle: "normal",
           },
         },
         {
@@ -352,7 +349,6 @@ export default function InspectionForm({
           styles: {
             halign: "right" as const,
             font: "NotoSansHebrew",
-            fontStyle: "normal",
           },
         },
       ];
@@ -386,6 +382,7 @@ export default function InspectionForm({
           textColor: 255,
           font: "NotoSansHebrew",
           halign: "right" as const,
+          fontStyle: "normal",
         }, // #024CAA
         bodyStyles: { font: "NotoSansHebrew", halign: "right" as const },
         columnStyles: {
@@ -408,7 +405,6 @@ export default function InspectionForm({
         }
         addText("הערות מנהל אחזקה:", 210 - margin, currentY, {
           fontSize: 12,
-          fontStyle: "bold",
         });
         currentY += lineHeight;
         // Use splitTextToSize for multi-line text
