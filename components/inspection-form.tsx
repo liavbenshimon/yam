@@ -289,6 +289,7 @@ export default function InspectionForm({
 
     const lineHeight = 7;
     const margin = 14;
+    const fontSize = 14;
     let currentY = margin;
 
     try {
@@ -301,7 +302,7 @@ export default function InspectionForm({
       );
     }
 
-    doc.setFontSize(18);
+    doc.setFontSize(fontSize + 4);
     addText("ים ניהול ואחזקה – סיור ביקורת", 210 - margin, currentY);
     currentY += lineHeight;
     doc.setFontSize(12);
@@ -388,9 +389,8 @@ export default function InspectionForm({
           doc.addPage();
           currentY = margin;
         }
-        addText("הערות מנהל אחזקה:", 210 - margin, currentY, {
-          fontSize: 12,
-        });
+        doc.setFontSize(fontSize - 4);
+        addText("הערות מנהל אחזקה:", 210 - margin, currentY);
         currentY += lineHeight;
         // Use splitTextToSize for multi-line text
         const notesLines = doc.splitTextToSize(notes, 210 - margin * 2);
