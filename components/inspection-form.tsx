@@ -228,16 +228,6 @@ export default function InspectionForm({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
 
-  const formatDateForDisplay = (dateStr: string) => {
-    if (!dateStr) return "";
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("he-IL", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-  };
-
   // Loading the current manager's clients
   useEffect(() => {
     const manager = getManagerById(managerId);
@@ -431,6 +421,12 @@ export default function InspectionForm({
       formValues.systemItems,
       formValues.managerNotes.systems
     );
+
+    doc.setFontSize(8);
+    doc.setTextColor(128, 128, 128);
+    doc.text(submissionTime.split("").reverse().join(""), 210 - 14, 297 - 14, {
+      align: "right",
+    });
 
     const filename = `inspection_${new Date().toISOString().slice(0, 10)}.pdf`;
 
@@ -889,3 +885,13 @@ export default function InspectionForm({
     </Formik>
   );
 }
+
+const formatDateForDisplay = (dateStr: string) => {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("he-IL", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+};
