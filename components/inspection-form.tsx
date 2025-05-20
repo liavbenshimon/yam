@@ -417,9 +417,20 @@ export default function InspectionForm({
       formValues.managerNotes.systems
     );
 
+    const now = new Date();
+    const timestamp = now.toLocaleString("he-IL", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+
     doc.setFontSize(8);
     doc.setTextColor(128, 128, 128);
-    doc.text(submissionTime.split("").reverse().join(""), 210 - 14, 297 - 14, {
+    doc.text(timestamp.split("").reverse().join(""), 210 - 14, 297 - 14, {
       align: "right",
     });
 
