@@ -307,7 +307,7 @@ export default function InspectionForm({
     currentY += lineHeight;
     doc.setFontSize(12);
     doc.setTextColor(236, 131, 5); // #EC8305
-    addText("מצוינות במבחן היומיומי", 210 - margin, currentY);
+    addText("מצוינות במבחן יום יומי", 210 - margin, currentY);
     doc.setTextColor(0, 0, 0); // Reset color
     currentY += lineHeight * 2;
 
@@ -416,6 +416,32 @@ export default function InspectionForm({
       formValues.systemItems,
       formValues.managerNotes.systems
     );
+
+    const phone = "03-5618961";
+    const fax = "03-5615712";
+    const website = "https://yam-g.co.il";
+
+    const pageCount = doc.getNumberOfPages();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const centerX = pageWidth / 2;
+
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(12);
+      doc.setTextColor(2, 76, 170);
+
+      // טלפון + פקס
+      doc.text(`טלפון: ${phone}   פקס: ${fax}`, centerX, 297 - 20, {
+        align: "center",
+        isInputRtl: true, // טקסט עברי
+      });
+
+      // אתר – מוצג כ־LTR
+      doc.text(` ${website}`, centerX, 297 - 13, {
+        align: "center",
+        isInputRtl: true, // חשוב – מציג כתובת כמו שצריך
+      });
+    }
 
     const now = new Date();
     const timestamp = now.toLocaleString("he-IL", {
@@ -527,7 +553,7 @@ export default function InspectionForm({
                 <h1 className="text-xl md:text-3xl font-bold">
                   ים ניהול ואחזקה – סיור ביקורת
                 </h1>
-                <p className="mt-2 text-[#EC8305]">מצוינות במבחן היום יומי</p>
+                <p className="mt-2 text-[#EC8305]">מצוינות במבחן יום יומי</p>
                 {/* Logout Button */}
                 {!isPrinting && (
                   <div>
