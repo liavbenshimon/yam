@@ -527,7 +527,7 @@ export default function InspectionForm({
                 <h1 className="text-xl md:text-3xl font-bold">
                   ים ניהול ואחזקה – סיור ביקורת
                 </h1>
-                <p className="mt-2 text-[#EC8305]">מצוינות במבחן היומיומי</p>
+                <p className="mt-2 text-[#EC8305]">מצוינות במבחן היום יומי</p>
                 {/* Logout Button */}
                 {!isPrinting && (
                   <div>
