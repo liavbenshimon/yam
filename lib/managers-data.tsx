@@ -1,12 +1,12 @@
 export interface Manager {
-  id: string
-  name: string
-  clients: string[]
+  id: string;
+  name: string;
+  clients: string[];
 }
 
 export const managersData: Manager[] = [
   {
-    id: "1234",
+    id: "313222044",
     name: "שימי בנודיס",
     clients: [
       "ארתור רובנשטיין 4",
@@ -15,29 +15,35 @@ export const managersData: Manager[] = [
       "יחזאל שטרייכמן 3",
       "יחזאל שטרייכמן 9",
       "ישה חפץ 2",
+      "שפפ מבנן 8",
       "ישה חפץ 4",
-      "ישה חפץ 6",
       "איזיק שטרן 16",
       "לוי אשכול 108",
       "שאגל 6",
       "שאגל 8",
       "שאגל 11",
       "דה לה ריינה 9",
-      "ועד מבנן 8",
+      "שפפ שטריכמן רובינשטיין ",
+      "יחזקאל שטרייכמן 5",
+      "יחזקאל שטרייכמן 7",
+      "ארתור רובינשטיין 6",
+      "ארתור רובינשטיין 8",
     ],
   },
   {
-    id: "2345",
+    id: "057927055",
     name: "אמיר פאר",
-    clients: ["תמר 1", "התוף 5-9 ראשון לציון", "מעגל שלום 27"],
+    clients: [
+      "תמר 1",
+      "מעגל שלום 27",
+      "התוף 5 ראשון לציון",
+      "התוף 7 ראשון לציון",
+      "התוף 9 ראשון לציון",
+      "אחילהב 5 ראשון לציון",
+    ],
   },
   {
-    id: "3456",
-    name: "עובדיה יוסף",
-    clients: ["יחזקאל שטרייכמן 5", "יחזקאל שטרייכמן 7", "ארתור רובינשטיין 6", "ארתור רובינשטיין 8"],
-  },
-  {
-    id: "4567",
+    id: "028863249",
     name: "מקסים זנו",
     clients: [
       "בויאר 3",
@@ -63,12 +69,12 @@ export const managersData: Manager[] = [
     ],
   },
   {
-    id: "5678",
+    id: "306461948 ",
     name: "לב סמולר",
     clients: ["הגאולה 6", "חניתה 8"],
   },
   {
-    id: "6789",
+    id: "024209504",
     name: "משה עטייה",
     clients: [
       "טבת 16 מודיעין",
@@ -76,13 +82,14 @@ export const managersData: Manager[] = [
       "יגאל ידין 41 מודיעין",
       "יגאל ידין 43 מודיעין",
       "מגדל ים 6 מודיעין",
+      "מגדל ים 4 מודיעין",
       "שרה אמנו 41 מודיעין",
       "רחל אמנו 28 מודיעין",
       "רחל אמנו 26 מודיעין",
     ],
   },
   {
-    id: "7890",
+    id: "024965683",
     name: "גיל אופיר",
     clients: [
       "סוקולוב 13 הרצליה",
@@ -95,19 +102,21 @@ export const managersData: Manager[] = [
       "לוטם 3 נתניה",
       "לוטם 5 נתניה",
       'שז"ר 12 נתניה',
+      "הגאולה 6",
+      "חניתה 8",
     ],
   },
   {
-    id: "8901",
+    id: "025270117",
     name: "אודי סבירסקי",
     clients: ["אחילהב 5 ראשון לציון"],
   },
-]
+];
 
 export function getManagerById(id: string): Manager | undefined {
-  return managersData.find((manager) => manager.id === id)
+  return managersData.find((manager) => manager.id === id);
 }
 
 export function getManagerByName(name: string): Manager | undefined {
-  return managersData.find((manager) => manager.name === name)
+  return managersData.find((manager) => manager.name === name);
 }

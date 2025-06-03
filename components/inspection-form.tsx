@@ -113,7 +113,7 @@ const initialGeneralItems: CheckItem[] = [
   },
   {
     id: "stairwellDoors",
-    topic: "בדיקת דלתות חדר מדרגות שנסגרות (מחזירים)",
+    topic: "בדיקת דלתות חדר מדרגות שנסגרות )מחזירים(",
     isOk: null,
     isNotOk: null,
     comments: "",
@@ -149,13 +149,6 @@ const initialGeneralItems: CheckItem[] = [
   {
     id: "clubCleanliness",
     topic: "ניקיון מועדון",
-    isOk: null,
-    isNotOk: null,
-    comments: "",
-  },
-  {
-    id: "roofCleanliness",
-    topic: "בדק ניקיון הגג וניקוזים",
     isOk: null,
     isNotOk: null,
     comments: "",
@@ -233,6 +226,27 @@ const initialSystemItems: CheckItem[] = [
     isOk: null,
     isNotOk: null,
     comments: "",
+  },
+  {
+    id: "roofCleanliness",
+    topic: "בדק ניקיון הגג וניקוזים",
+    isOk: null,
+    isNotOk: null,
+    comments: "בדיקה חצי שנתית",
+  },
+  {
+    id: "Gym",
+    topic: "חדר כושר",
+    isOk: null,
+    isNotOk: null,
+    comments: "ביקורת שנתית על ידי ספק מורשה",
+  },
+  {
+    id: "trashCompactor",
+    topic: "דחסנית",
+    isOk: null,
+    isNotOk: null,
+    comments: "ביקורת שנתית על ידי ספק מורשה",
   },
 ];
 
