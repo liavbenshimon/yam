@@ -259,11 +259,6 @@ export const managersData: Manager[] = [
       "מוטה גור 22 נתניה",
     ],
   },
-  // {
-  //   id: "025270117",
-  //   name: "אודי סבירסקי",
-  //   clients:
-  // },
 ];
 
 export function getManagerById(id: string): Manager | undefined {
