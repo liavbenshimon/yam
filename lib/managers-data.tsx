@@ -6,7 +6,7 @@ export interface Manager {
 
 export const managersData: Manager[] = [
   {
-    id: "313222044",
+    id: "039561501",
     name: "איציק שמעוני",
     clients: [
       "ארתור רובנשטיין 4",
